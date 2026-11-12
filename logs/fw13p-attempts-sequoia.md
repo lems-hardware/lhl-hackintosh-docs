@@ -94,3 +94,6 @@ attempt 46 - Disabled the VoodooI2C core and kept VoodooGPIO, VoodooI2CServices,
 attempt 47 - Went back to the working Attempt 43 EFI and added only the -vi2c-force-polling boot argument. This time the boot stalled before the macsetup input detection screen appeared. I didn’t reach Recovery Utilities or Terminal, and I don’t know exactly where it stopped.
 
 attempt 48 - Reused the Attempt 43 EFI and got into Recovery Terminal. PS2 Mouse Emulation was already set to Auto in BIOS. The PS/2 controller timed out on input stream 1, but ApplePS2Mouse started afterward and showed up as an active pointing device in IORegistry. On a cold boot, I reached the Recovery GUI and the touchpad worked for basic input. Multitouch gestures didn’t work. When I restarted from the Recovery GUI using the same EFI, I ended up back at the macsetup input detection screen.
+
+attempt 49 - Used UnPlugged https://github.com/corpnewt/UnPlugged to obtain the macOS pkg, and it worked. Now, it's a matter of how much I can get working on this thing. I feel like this is a massive breakthrough. Reached desktop.
+
