@@ -23,7 +23,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-**Research status: Experimental. Installed Sequoia desktop reached on November 12, 2026, following 48 documented boot attempts.**
+Research status: Experimental, installed Sequoia desktop reached on November 12, 2026, following 48 documented boot attempts.
 
 | Component | Status | Notes |
 |---|---|---|
@@ -34,10 +34,10 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 | CPU compatibility | Partial | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU |
 | Integrated graphics/display | Partial | Basic display output works without Xe3/Metal acceleration |
 | Internal keyboard | Working | VoodooPS2 |
-| Touchpad | Partial | Basic PS/2 pointer movement; initialization remains inconsistent |
+| Touchpad | Working, stability unknown | Gestures, scrolling, and Trackpad settings work |
 | USB controllers | Partial | Both xHCI controllers initialize, USB 2.0 root-hub port enumeration remains unresolved |
 | External USB storage | Partial | Installer USB's ExFAT partition was accessible after manual mounting in Recovery; general device support remains unresolved |
-| Native I²C touchpad | Under investigation | VoodooI2C compatibility experiments |
+| Native I²C touchpad | Working, stability unknown | VoodooI2CHID and VoodooInput attach in polling mode for touch reports |
 | Wi-Fi | Unsupported | No confirmed working macOS driver for Intel BE211 CNVio3 |
 | GPU acceleration | Unsupported | No functional Xe3 graphics acceleration |
 | Audio, Bluetooth, webcam | Not yet verified | Installed-system testing pending |
@@ -56,6 +56,7 @@ These statuses describe observations on this specific machine, not general Panth
 - **Attempt 41:** Investigated missing USB 2.0 ports and inconsistent USB speed identifiers.
 - **Attempt 48:** Confirmed basic touchpad functionality through PS/2 emulation, with inconsistent behavior across boot methods.
 - **Attempt 49/November 12, 2026:** Completed an offline installation of **macOS Sequoia 15.8.3**, booted the installed system, and reached the desktop.
+- **Attempt 59:** Patched AppleHPET to leave GSI 21 available for I2C5, enabling the native I²C touchpad.
 
 ### Offline installation milestone
 
@@ -88,7 +89,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 ## Research Priorities
 
 1. **USB compatibility:** Investigate xHCI port creation, USB 2.0 enumeration, and reliable external-device recognition.
-2. **Input devices:** Improve PS/2 initialization reliability and investigate native I²C multitouch.
+2. **Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
 3. **Wireless networking:** Research Intel BE211 CNVio3 support and possible interim connectivity options.
 4. **System stability and power:** Test battery reporting, sleep/wake, restarts, and power management on the installed system.
 5. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
