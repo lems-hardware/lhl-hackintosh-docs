@@ -34,11 +34,11 @@ Research status: Experimental, installed Sequoia desktop reached on November 12,
 | CPU compatibility | Partial | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU |
 | Integrated graphics/display | Partial | Basic display output works without Xe3/Metal acceleration |
 | Internal keyboard | Working | VoodooPS2 |
-| Touchpad | Working, stability unknown | Gestures, scrolling, and Trackpad settings work |
+| Touchpad | Working | Gestures, scrolling, and Trackpad settings work |
 | USB controllers | Partial | Both xHCI controllers initialize, USB 2.0 root-hub port enumeration remains unresolved |
-| External USB storage | Partial | Installer USB's ExFAT partition was accessible after manual mounting in Recovery; general device support remains unresolved |
+| External USB storage | Partial | Installer USB's ExFAT partition was accessible after manual mounting in Recovery, general device support remains unresolved |
 | Native I²C touchpad | Working, stability unknown | VoodooI2CHID and VoodooInput attach in polling mode for touch reports |
-| Wi-Fi | Unsupported | No confirmed working macOS driver for Intel BE211 CNVio3 |
+| Wi-Fi | In progress | Experimental BE211 driver lists nearby 2.4 GHz networks in the native Wi-Fi menu. Joining and data transfer are unverified. |
 | GPU acceleration | Unsupported | No functional Xe3 graphics acceleration |
 | Audio, Bluetooth, webcam | Not yet verified | Installed-system testing pending |
 | Sleep/wake and power management | Not yet verified | Installed-system testing pending |
@@ -57,6 +57,7 @@ These statuses describe observations on this specific machine, not general Panth
 - **Attempt 48:** Confirmed basic touchpad functionality through PS/2 emulation, with inconsistent behavior across boot methods.
 - **Attempt 49/November 12, 2026:** Completed an offline installation of **macOS Sequoia 15.8.3**, booted the installed system, and reached the desktop.
 - **Attempt 59:** Patched AppleHPET to leave GSI 21 available for I2C5, enabling the native I²C touchpad.
+- **Attempts 72–80:** Confirmed passive scanning in the native Wi-Fi menu, firmware link activation, and peer add and removal. Management transmit queue setup remains unresolved.
 
 ### Offline installation milestone
 
@@ -78,7 +79,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The existing journal covers the earlier boot attempts, while the installation milestone is summarized above.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1–80, including the BE211 Wi-Fi experiments.
 
 ### Visual archive
 
@@ -90,7 +91,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 
 1. **USB compatibility:** Investigate xHCI port creation, USB 2.0 enumeration, and reliable external-device recognition.
 2. **Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
-3. **Wireless networking:** Research Intel BE211 CNVio3 support and possible interim connectivity options.
+3. **Wireless networking:** Resolve BE211 management transmit queue setup, then test joining and data transfer.
 4. **System stability and power:** Test battery reporting, sleep/wake, restarts, and power management on the installed system.
 5. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
 
