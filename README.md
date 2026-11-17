@@ -28,7 +28,7 @@ Research status: Experimental, installed Sequoia desktop reached on November 12,
 | Component | Status | Notes |
 |---|---|---|
 | OpenCore boot | Working | Boots Sequoia Recovery and the installed system |
-| macOS Recovery | Working, inconsistently | Graphical Recovery and Terminal confirmed; cold/warm boot behavior varies |
+| macOS Recovery | Working, inconsistently | Graphical Recovery and Terminal confirmed. Cold/warm boot behavior varies. |
 | macOS installation | Working | Sequoia 15.8.3 installed offline to a dedicated internal APFS partition |
 | Installed desktop | Working, limited | Setup completed, desktop and System Settings reached |
 | CPU compatibility | Partial | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU |
@@ -38,7 +38,7 @@ Research status: Experimental, installed Sequoia desktop reached on November 12,
 | USB controllers | Partial | Both xHCI controllers initialize, USB 2.0 root-hub port enumeration remains unresolved |
 | External USB storage | Partial | Installer USB's ExFAT partition was accessible after manual mounting in Recovery, general device support remains unresolved |
 | Native I²C touchpad | Working, stability unknown | VoodooI2CHID and VoodooInput attach in polling mode for touch reports |
-| Wi-Fi | In progress | Experimental BE211 driver lists nearby 2.4 GHz networks in the native Wi-Fi menu. Joining and data transfer are unverified. |
+| Wi-Fi | Partial | The experimental BE211 driver joined an open 2.4 GHz network from the native Wi-Fi menu. macOS obtained an IPv4 lease and resolved the router over ARP during a 15-second test. General traffic and internet access remain unverified. |
 | GPU acceleration | Unsupported | No functional Xe3 graphics acceleration |
 | Audio, Bluetooth, webcam | Not yet verified | Installed-system testing pending |
 | Sleep/wake and power management | Not yet verified | Installed-system testing pending |
@@ -57,7 +57,10 @@ These statuses describe observations on this specific machine, not general Panth
 - **Attempt 48:** Confirmed basic touchpad functionality through PS/2 emulation, with inconsistent behavior across boot methods.
 - **Attempt 49/November 12, 2026:** Completed an offline installation of **macOS Sequoia 15.8.3**, booted the installed system, and reached the desktop.
 - **Attempt 59:** Patched AppleHPET to leave GSI 21 available for I2C5, enabling the native I²C touchpad.
-- **Attempts 72–80:** Confirmed passive scanning in the native Wi-Fi menu, firmware link activation, and peer add and removal. Management transmit queue setup remains unresolved.
+- **Attempts 72-80:** Confirmed passive scanning in the native Wi-Fi menu, firmware link activation, and peer add and removal.
+- **Attempts 81-86:** Allocated a management transmit queue and used session protection to complete Open System authentication and association.
+- **Attempt 90:** Completed DHCP in the driver diagnostic.
+- **Attempt 97:** Answered the extended BSS query with the active association rates. macOS kept the link up for the full test, obtained its own DHCP lease, and published IPv4 and DNS settings.
 
 ### Offline installation milestone
 
@@ -79,7 +82,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1–80, including the BE211 Wi-Fi experiments.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-97, including the BE211 Wi-Fi experiments.
 
 ### Visual archive
 
@@ -91,7 +94,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 
 1. **USB compatibility:** Investigate xHCI port creation, USB 2.0 enumeration, and reliable external-device recognition.
 2. **Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
-3. **Wireless networking:** Resolve BE211 management transmit queue setup, then test joining and data transfer.
+3. **Wireless networking:** Test ordinary IP traffic, internet access, and connection stability on the BE211.
 4. **System stability and power:** Test battery reporting, sleep/wake, restarts, and power management on the installed system.
 5. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
 
