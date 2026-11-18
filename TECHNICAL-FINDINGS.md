@@ -1,6 +1,6 @@
 # Framework Laptop 13 Pro macOS Sequoia technical findings
 
-**Coverage:** Boot attempts 1-101, through November 18, 2026  
+**Coverage:** Boot attempts 1-103, through November 18, 2026\
 **Platform:** Framework Laptop 13 Pro, Intel Panther Lake  
 **Evidence:** [Boot attempt journal](logs/fw13p-attempts-sequoia.md) and [visual archive](logs/fw13p-visual-sequoia/)
 
@@ -9,6 +9,8 @@
 I went from a boot with no visible kernel output to graphical Sequoia Recovery, then opened Terminal and installed macOS Sequoia 15.8.3 offline. The installed desktop runs with basic display output, a built-in PS/2 keyboard, and a native I²C touchpad with gestures and configurable settings. Native touchpad stability has limited repeat testing.
 
 I confirmed **Safari HTTPS over the Intel BE211** in Attempt 100 on an open 2.4 GHz network. In Attempt 101, I removed the scheduled disconnect and used Wi-Fi for 3–4 hours without an unexpected drop. It also reconnected automatically after I opened the lid the next morning. The current path supports IPv4 DNS and HTTPS over TCP. Secured networks and additional bands remain open work.
+
+I also brought up onboard audio in Attempt 103. The ALC285 microphone, speakers, wired headphones, volume/mute controls and automatic jack switching work, including across restarts. Extended audio stability and sleep/wake remain unverified.
 
 ## Test platform and baselines
 
@@ -146,7 +148,19 @@ Scheduled teardown removed the address. A native leave during cleanup coincided 
 
 **101.** I removed the scheduled disconnect and took the SSID from the macOS join request. The driver still checks for an eligible open 2.4 GHz network and honors a valid requested BSSID. I used Wi-Fi for 3–4 hours without an unexpected disconnect. Wi-Fi reconnected automatically after I reopened the lid the next morning. I did not record the network name, the exact sleep state or the reconnect latency.
 
-## 5. Current status and evidence limits
+## 5. Onboard audio - Attempts 102-103
+
+Linux identified a Realtek ALC285 codec (`10ec:0285`, subsystem `f111:000f`) behind the Panther Lake audio controller `8086:e428` at `00:1f.3`, ACPI `\_SB.PC00.HDAS`. Speakers use codec pin `0x17` with DAC `0x03`, headphones use `0x21` with DAC `0x02`, and the internal microphone uses pin `0x12`. I selected AppleALC layout 66 because its output routes match this wiring.
+
+**102.** I added official AppleALC 1.9.8 DEBUG and `alcid=66 -alcdbg` to the Attempt 101 EFI. AppleALC loaded, renamed HDAS to HDEF and selected the requested layout. AppleHDAController 600.2 reached its probe but returned failure, with no attached codec or audio device. Its generic PCI class match included the hardware class, so the failure occurred after matching. AppleALC logged no controller-specific modification for `8086:e428`. This was earlier than codec routing.
+
+**103.** Following [Mubai's Panther Lake audio investigation](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs/blob/5f0de92f42b3655d6539b91fe3a630b8262096f3/HARDWARE_FOLLOWUP_2026-11-13.md), I added only `device-id = ca510000` at `PciRoot(0x0)/Pci(0x1F,0x3)`, presenting compatibility ID `8086:51ca`. I retained layout 66 and all driver binaries. AppleALC selected its existing Raptor Lake controller modification and logged patch application. AppleHDAController attached, discovered the ALC285 codec and started AppleHDADriver. The mounted EFI matched all 60 staged files.
+
+The cold-boot inventory listed Built-in Microphone, Built-in Line Input and Built-in Output using Internal Speakers. I confirmed microphone operation, audible playback through speakers and wired headphones, volume and mute controls, automatic jack switching, and continued operation across restarts. These functional results are my direct hardware observations. Line-input functionality was not separately tested. Extended stability and sleep/wake remain unverified.
+
+The initial Attempt 102 driver copy reported filesystem metadata errors. Attempt 103 archived the installed files and kernel collection directly, with an empty archive error log. The saved Attempt 103 evidence was a partial collector folder without its completion marker or final outer archive. Restart and functional follow-ups were reported separately, without additional captures. SimpleHDA was not used on this Sequoia system. No new manual AppleHDA binary patch was added.
+
+## 6. Current status and evidence limits
 
 | Area | Verified outcome | Open question |
 | --- | --- | --- |
@@ -157,7 +171,8 @@ Scheduled teardown removed the address. A native leave during cleanup coincided 
 | Touchpad | Native PIXA3854 input with gestures and settings. | Long-run stability, sleep/wake and continued coexistence with PS/2 fallback. |
 | External USB | Both xHCI controllers started in Recovery. A manually mounted ExFAT partition was usable for offline installation in a later run. | Missing USB 2 port publication, general hotplug and reliable external HID. |
 | Wi-Fi | Native open 2.4 GHz joins, DHCP, DNS and Safari HTTPS. One 3–4-hour run and one automatic reconnect after an overnight lid close. | Repeatability across access points and sleep states, broader traffic support, captive portals, secured networks and other bands. |
-| Other devices | Audio, Bluetooth, webcam and power features have no completed verification in this series. | Functional peripheral and power-management tests. The firmware coexistence command is separate from Bluetooth function. |
+| Audio | ALC285 microphone, speakers, wired headphones, volume/mute and automatic jack switching, including across restarts. | Extended stability, sleep/wake and separately tested line input. |
+| Other devices | Bluetooth, webcam and power features have no completed verification in this series. | Functional peripheral and power-management tests. The firmware coexistence command is separate from Bluetooth function. |
 
 ### Evidence and reproducibility
 
@@ -165,3 +180,11 @@ Scheduled teardown removed the address. A native leave during cleanup coincided 
 - Recovery terminal photos record the actual OS version, loaded drivers and registry state. The post-install collector captured early and late kernel logs and IORegistry. Service registration establishes attachment, while typing, pointer movement and gestures require functional observation.
 - I archived staged EFI files, changed-file hashes, OpenCore 1.0.8 validator output and file references where available. For later Wi-Fi tests, I also saved driver source patches, build logs and captured output. A manifest match establishes the tested files when measured. Exact USB matches were unavailable for some early and follow-up runs.
 - Attempt 97 verified DHCP at three points, from firmware TX completion through packets visible on `en0` to IPConfiguration publishing the lease. Attempt 100 pairs the Safari page load with DNS and TCP capture. My Attempt 101 duration and reconnect findings come from direct use without a collector trace.
+
+## Credits and references
+
+OpenCore, Lilu, VirtualSMC, VoodooPS2 and AppleALC are [Acidanthera projects](https://github.com/acidanthera). Native touchpad support builds on [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C) and [VoodooInput](https://github.com/acidanthera/VoodooInput). The wireless foundation is [OpenIntelWireless/itlwm](https://github.com/OpenIntelWireless/itlwm) and [Ersiter's BE200 fork](https://github.com/Ersiter/AirportItlwm-BE200), with Intel firmware and the original component notices retained.
+
+[Mubai's hardware follow-up](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs/blob/5f0de92f42b3655d6539b91fe3a630b8262096f3/HARDWARE_FOLLOWUP_2026-11-13.md) supplied the controller compatibility-ID lead for Attempt 103. AppleALC's [controller definitions](https://github.com/acidanthera/AppleALC/blob/1.9.8/Resources/Controllers.plist) and [ALC285 resources](https://github.com/acidanthera/AppleALC/blob/1.9.8/Resources/ALC285/Info.plist) establish the upstream patch and layout provenance. Layout 66 is credited there to R-a-s-c-a-l. My Framework-specific outcomes and evidence limits are recorded above.
+
+Installer retrieval and Linux cross-builds used [gibMacOS](https://github.com/corpnewt/gibMacOS), [MacKernelSDK](https://github.com/acidanthera/MacKernelSDK), LLVM/Clang and [cctools-port](https://github.com/tpoechtrager/cctools-port). Apple and all upstream contributors retain credit and rights for their components.

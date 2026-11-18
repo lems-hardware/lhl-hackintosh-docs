@@ -19,7 +19,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-Research status: Wi-Fi and GPU acceleration are being worked on, with GPU acceleration starting to be researched. 
+Research status: subsystem bring-up is the current focus. Onboard audio is working, and further Wi-Fi development is paused.
 
 | Component                       | Status                  | Notes                                                                                                                                                                                                                   |
 | ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -36,7 +36,8 @@ Research status: Wi-Fi and GPU acceleration are being worked on, with GPU accele
 | Native I²C touchpad             | Working                 | VoodooI2CHID and VoodooInput attach in polling mode for touch reports, appears to be reliable throughout experiments                                                                                                    |
 | Wi-Fi                           | Partial                 | The experimental BE211 driver loaded a public HTTPS page in Safari on an open 2.4 GHz network. A follow-up ran for 3–4 hours without unexpected disconnects and reconnected automatically after an overnight lid close. |
 | GPU acceleration                | Unsupported             | No functional Xe3 graphics acceleration                                                                                                                                                                                 |
-| Audio, Bluetooth, webcam        | Not yet verified        | Installed-system testing pending                                                                                                                                                                                        |
+| Onboard audio | Working in tested functions | ALC285 microphone, speakers, wired headphones, volume/mute and automatic jack switching work, including across restarts. Extended stability and sleep/wake remain unverified. |
+| Bluetooth, webcam | Not yet verified | Installed-system testing pending |
 | Sleep/wake and power management | Not yet verified        | Installed-system testing pending                                                                                                                                                                                        |
 
 These statuses may be hardware specific to this configuration or potentially even to this laptop only.
@@ -58,6 +59,7 @@ These statuses may be hardware specific to this configuration or potentially eve
 - **Attempt 90:** Completed DHCP in the driver diagnostic.
 - **Attempt 97:** Answered the extended BSS query with the active association rates. macOS kept the link up for the full test, obtained its own DHCP lease, and published IPv4 and DNS settings.
 - **Attempts 100-101:** Reused completed transmit slots, loaded a public HTTPS page in Safari, and removed the scheduled disconnect. The connection held for hours and reconnected after an overnight lid close.
+- **Attempts 102-103:** Located an AppleHDAController probe failure and enabled ALC285 audio using AppleALC 1.9.8, layout 66 and the `8086:51CA` controller compatibility ID. Microphone, speakers, wired headphones, volume/mute, automatic jack switching and operation across restarts were confirmed.
 
 ### Offline installation milestone
 
@@ -79,7 +81,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-101, including the BE211 Wi-Fi experiments.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-103, including the BE211 Wi-Fi experiments and onboard audio bring-up.
 
 ### Visual archive
 
@@ -89,7 +91,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 
 ## Research Priorities
 
-1. **(In progress) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. Currently working on WPA2/WPA3 support and 5GHz support.
+1. **(Paused) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. WPA2/WPA3 and 5 GHz support remain open work.
 2. **System stability and power:** Test battery reporting, sleep/wake, restarts, and power management on the installed system.
 3. **USB compatibility:** Investigate xHCI port creation, USB 2.0 enumeration, and reliable external-device recognition.
 4. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
@@ -108,3 +110,11 @@ Experimental results may be hardware-specific, incomplete, or subject to revisio
 Original documentation and research materials are licensed under the [Creative Commons Attribution 4.0 International License](LICENSE), unless otherwise stated.
 
 Third-party code, software, and other materials retain their respective licenses.
+
+## Credits
+
+- [Acidanthera](https://github.com/acidanthera) for OpenCore, Lilu, VirtualSMC, VoodooPS2 and AppleALC. The ALC285 layout 66 profile is credited upstream to R-a-s-c-a-l in the [codec resources](https://github.com/acidanthera/AppleALC/blob/1.9.8/Resources/ALC285/Info.plist).
+- [VoodooI2C contributors](https://github.com/VoodooI2C/VoodooI2C) and [VoodooInput contributors](https://github.com/acidanthera/VoodooInput) for the native touchpad stack.
+- [OpenIntelWireless](https://github.com/OpenIntelWireless/itlwm) and [Ersiter's AirportItlwm-BE200 fork](https://github.com/Ersiter/AirportItlwm-BE200) for the wireless driver foundation. Intel supplies the firmware under its separate redistribution terms. My BE211 changes and build provenance are in [lhl-be211-wireless](https://github.com/lems-hardware/lhl-be211-wireless).
+- [yangyishuo1124 / Mubai](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs/blob/5f0de92f42b3655d6539b91fe3a630b8262096f3/HARDWARE_FOLLOWUP_2026-11-13.md) for documenting the Panther Lake audio controller compatibility-ID experiment that informed Attempt 103. That record also cites [VedCloud's Meteor Lake work](https://github.com/VedCloud/Meteor-Lake-Xe-LPG-Metal-Graphics) as an earlier `51CA` compatibility reference. I retained my Framework's ALC285 layout and verified the result on this machine.
+- [corpnewt / gibMacOS](https://github.com/corpnewt/gibMacOS), [MacKernelSDK](https://github.com/acidanthera/MacKernelSDK) and [cctools-port](https://github.com/tpoechtrager/cctools-port) for installer retrieval and build tooling. Apple and the upstream operating-system projects retain credit and rights for their software and driver sources.
