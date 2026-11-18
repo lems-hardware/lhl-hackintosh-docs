@@ -19,7 +19,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-Research status: WiFi and GPU acceleration are being worked on, with GPU acceleration starting to be researched. 
+Research status: Wi-Fi and GPU acceleration are being worked on, with GPU acceleration starting to be researched. 
 
 | Component                       | Status                  | Notes                                                                                                                                                                                                                   |
 | ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -33,7 +33,7 @@ Research status: WiFi and GPU acceleration are being worked on, with GPU acceler
 | Touchpad                        | Working                 | Gestures, scrolling, and Trackpad settings work                                                                                                                                                                         |
 | USB controllers                 | Partial                 | Both xHCI controllers initialize, USB 2.0 root-hub port enumeration remains unresolved                                                                                                                                  |
 | External USB storage            | Partial                 | Installer USB's ExFAT partition was accessible after manual mounting in Recovery, general device support remains unresolved                                                                                             |
-| Native I²C touchpad             | Working                 | VoodooI2CHID and VoodooInput attach in polling mode for touch reports, appears to be reliable throughout experiements                                                                                                   |
+| Native I²C touchpad             | Working                 | VoodooI2CHID and VoodooInput attach in polling mode for touch reports, appears to be reliable throughout experiments                                                                                                    |
 | Wi-Fi                           | Partial                 | The experimental BE211 driver loaded a public HTTPS page in Safari on an open 2.4 GHz network. A follow-up ran for 3–4 hours without unexpected disconnects and reconnected automatically after an overnight lid close. |
 | GPU acceleration                | Unsupported             | No functional Xe3 graphics acceleration                                                                                                                                                                                 |
 | Audio, Bluetooth, webcam        | Not yet verified        | Installed-system testing pending                                                                                                                                                                                        |
@@ -89,7 +89,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 
 ## Research Priorities
 
-1. **(In progress) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. Currently working on WPA-2/3 support and 5GHz support.
+1. **(In progress) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. Currently working on WPA2/WPA3 support and 5GHz support.
 2. **System stability and power:** Test battery reporting, sleep/wake, restarts, and power management on the installed system.
 3. **USB compatibility:** Investigate xHCI port creation, USB 2.0 enumeration, and reliable external-device recognition.
 4. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
@@ -99,7 +99,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 
 This repository primarily contains research documentation, observations, and visual evidence.
 
-It is **not currently a complete Hackintosh installation guide or a production-ready EFI distribution**. A public EFI release is not provided here as it is unknown how stable it is in it's current form.
+It is **not currently a complete Hackintosh installation guide or a production-ready EFI distribution**. A public EFI release is not provided here as it is unknown how stable it is in its current form.
 
 Experimental results may be hardware-specific, incomplete, or subject to revision as additional evidence becomes available.
 
