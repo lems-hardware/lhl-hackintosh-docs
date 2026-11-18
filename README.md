@@ -1,49 +1,45 @@
-# LHL Hackintosh Documentation
+## lhl-hackintosh-docs
 
-This repository is part of **Lem's Hardware Lab (LHL)** and serves as a public archive of experiments involving macOS on unsupported PC hardware.
+The current research platform is a **Framework Laptop 13 Pro** featuring Intel's Panther Lake architecture.
 
-The goal is to document technical progress, failures, workarounds, and reproducible findings that may help future Hackintosh and driver development projects.
+Specs:
 
-## Current Research: Intel Panther Lake
+| Component                    | Hardware                        |
+| ---------------------------- | ------------------------------- |
+| Laptop                       | Framework Laptop 13 Pro         |
+| Processor                    | Intel Core Ultra X7 358H        |
+| Integrated graphics          | Intel Arc B390 (Xe3)            |
+| GPU PCI ID                   | `8086:B082`                     |
+| Wireless                     | Intel BE211 Wi-Fi 7 (CNVio3)    |
+| Installed experimental OS    | macOS Sequoia 15.8.3 (`24H241`) |
+| Initial Recovery environment | macOS Sequoia 15.4.1            |
+| Bootloader                   | OpenCore (external USB EFI)     |
 
-The primary research platform is a **Framework Laptop 13 Pro** featuring Intel's Panther Lake architecture.
-
-| Component | Hardware |
-|---|---|
-| Laptop | Framework Laptop 13 Pro |
-| Processor | Intel Core Ultra X7 358H |
-| Integrated graphics | Intel Arc B390 (Xe3) |
-| GPU PCI ID | `8086:B082` |
-| Wireless | Intel BE211 Wi-Fi 7 (CNVio3) |
-| Installed experimental OS | macOS Sequoia 15.8.3 (`24H241`) |
-| Initial Recovery environment | macOS Sequoia 15.4.1 |
-| Bootloader | OpenCore (external USB EFI) |
-
-This hardware is not officially supported by macOS. Significant compatibility work is required to initialize the operating system and its hardware drivers.
+This hardware is not officially supported by macOS. Significant compatibility work is required to initialize the operating system and its hardware drivers, along with most of my sanity.
 
 ## Current Progress
 
-Research status: Experimental, installed Sequoia desktop reached on November 12, 2026, following 48 documented boot attempts.
+Research status: WiFi and GPU acceleration are being worked on, with GPU acceleration starting to be researched. 
 
-| Component | Status | Notes |
-|---|---|---|
-| OpenCore boot | Working | Boots Sequoia Recovery and the installed system |
-| macOS Recovery | Working, inconsistently | Graphical Recovery and Terminal confirmed. Cold/warm boot behavior varies. |
-| macOS installation | Working | Sequoia 15.8.3 installed offline to a dedicated internal APFS partition |
-| Installed desktop | Working, limited | Setup completed, desktop and System Settings reached |
-| CPU compatibility | Partial | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU |
-| Integrated graphics/display | Partial | Basic display output works without Xe3/Metal acceleration |
-| Internal keyboard | Working | VoodooPS2 |
-| Touchpad | Working | Gestures, scrolling, and Trackpad settings work |
-| USB controllers | Partial | Both xHCI controllers initialize, USB 2.0 root-hub port enumeration remains unresolved |
-| External USB storage | Partial | Installer USB's ExFAT partition was accessible after manual mounting in Recovery, general device support remains unresolved |
-| Native I²C touchpad | Working, stability unknown | VoodooI2CHID and VoodooInput attach in polling mode for touch reports |
-| Wi-Fi | Partial | The experimental BE211 driver loaded a public HTTPS page in Safari on an open 2.4 GHz network. A follow-up ran for 3–4 hours without unexpected disconnects and reconnected automatically after an overnight lid close. |
-| GPU acceleration | Unsupported | No functional Xe3 graphics acceleration |
-| Audio, Bluetooth, webcam | Not yet verified | Installed-system testing pending |
-| Sleep/wake and power management | Not yet verified | Installed-system testing pending |
+| Component                       | Status                  | Notes                                                                                                                                                                                                                   |
+| ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
+| OpenCore boot                   | Working                 | Boots Sequoia Recovery and the installed system                                                                                                                                                                         |
+| macOS Recovery                  | Working, inconsistently | Graphical Recovery and Terminal confirmed. Cold/warm boot behavior varies. (based on testing before November 12)                                                                                                        |
+| macOS installation              | Working                 | Sequoia 15.8.3 installed offline to a dedicated internal APFS partition                                                                                                                                                 |
+| Installed desktop               | Working                 | Setup completed, desktop and System Settings reached                                                                                                                                                                    |
+| CPU compatibility               | Partial                 | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU                                                                                                                                                 |
+| Integrated graphics/display     | Partial                 | Basic display output works without Xe3/Metal acceleration                                                                                                                                                               |
+| Internal keyboard               | Working                 | VoodooPS2                                                                                                                                                                                                               |
+| Touchpad                        | Working                 | Gestures, scrolling, and Trackpad settings work                                                                                                                                                                         |
+| USB controllers                 | Partial                 | Both xHCI controllers initialize, USB 2.0 root-hub port enumeration remains unresolved                                                                                                                                  |
+| External USB storage            | Partial                 | Installer USB's ExFAT partition was accessible after manual mounting in Recovery, general device support remains unresolved                                                                                             |
+| Native I²C touchpad             | Working                 | VoodooI2CHID and VoodooInput attach in polling mode for touch reports, appears to be reliable throughout experiements                                                                                                   |
+| Wi-Fi                           | Partial                 | The experimental BE211 driver loaded a public HTTPS page in Safari on an open 2.4 GHz network. A follow-up ran for 3–4 hours without unexpected disconnects and reconnected automatically after an overnight lid close. |
+| GPU acceleration                | Unsupported             | No functional Xe3 graphics acceleration                                                                                                                                                                                 |
+| Audio, Bluetooth, webcam        | Not yet verified        | Installed-system testing pending                                                                                                                                                                                        |
+| Sleep/wake and power management | Not yet verified        | Installed-system testing pending                                                                                                                                                                                        |
 
-These statuses describe observations on this specific machine, not general Panther Lake compatibility. A booting desktop does not imply complete hardware support.
+These statuses may be hardware specific to this configuration or potentially even to this laptop only.
 
 ## Research Milestones
 
@@ -89,21 +85,21 @@ A chronological record of configuration changes, experimental boot results, debu
 
 [Framework Panther Lake: Sequoia boot photographs](logs/fw13p-visual-sequoia/)
 
-Photographs documenting kernel output, driver initialization, Recovery milestones, and hardware investigations. Not every photograph has been matched to an exact attempt number.
+Photographs documenting kernel output, driver initialization, Recovery milestones, and hardware investigations. May remain unsorted until later.
 
 ## Research Priorities
 
-1. **USB compatibility:** Investigate xHCI port creation, USB 2.0 enumeration, and reliable external-device recognition.
-2. **Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
-3. **Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios.
-4. **System stability and power:** Test battery reporting, sleep/wake, restarts, and power management on the installed system.
-5. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
+1. **(In progress) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. Currently working on WPA-2/3 support and 5GHz support.
+2. **System stability and power:** Test battery reporting, sleep/wake, restarts, and power management on the installed system.
+3. **USB compatibility:** Investigate xHCI port creation, USB 2.0 enumeration, and reliable external-device recognition.
+4. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
+5. **(Complete) Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
 
 ## Project Scope
 
 This repository primarily contains research documentation, observations, and visual evidence.
 
-It is **not currently a complete Hackintosh installation guide or a production-ready EFI distribution**. A public EFI release is not provided here.
+It is **not currently a complete Hackintosh installation guide or a production-ready EFI distribution**. A public EFI release is not provided here as it is unknown how stable it is in it's current form.
 
 Experimental results may be hardware-specific, incomplete, or subject to revision as additional evidence becomes available.
 
@@ -112,9 +108,3 @@ Experimental results may be hardware-specific, incomplete, or subject to revisio
 Original documentation and research materials are licensed under the [Creative Commons Attribution 4.0 International License](LICENSE), unless otherwise stated.
 
 Third-party code, software, and other materials retain their respective licenses.
-
----
-
-**Lem's Hardware Lab (LHL)**
-
-*Experimental hardware compatibility, operating-system research, and low-level software development.*
