@@ -38,7 +38,7 @@ Research status: Experimental, installed Sequoia desktop reached on November 12,
 | USB controllers | Partial | Both xHCI controllers initialize, USB 2.0 root-hub port enumeration remains unresolved |
 | External USB storage | Partial | Installer USB's ExFAT partition was accessible after manual mounting in Recovery, general device support remains unresolved |
 | Native I²C touchpad | Working, stability unknown | VoodooI2CHID and VoodooInput attach in polling mode for touch reports |
-| Wi-Fi | Partial | The experimental BE211 driver joined an open 2.4 GHz network from the native Wi-Fi menu. macOS obtained an IPv4 lease and resolved the router over ARP during a 15-second test. General traffic and internet access remain unverified. |
+| Wi-Fi | Partial | The experimental BE211 driver loaded a public HTTPS page in Safari on an open 2.4 GHz network. A follow-up ran for 3–4 hours without unexpected disconnects and reconnected automatically after an overnight lid close. |
 | GPU acceleration | Unsupported | No functional Xe3 graphics acceleration |
 | Audio, Bluetooth, webcam | Not yet verified | Installed-system testing pending |
 | Sleep/wake and power management | Not yet verified | Installed-system testing pending |
@@ -61,6 +61,7 @@ These statuses describe observations on this specific machine, not general Panth
 - **Attempts 81-86:** Allocated a management transmit queue and used session protection to complete Open System authentication and association.
 - **Attempt 90:** Completed DHCP in the driver diagnostic.
 - **Attempt 97:** Answered the extended BSS query with the active association rates. macOS kept the link up for the full test, obtained its own DHCP lease, and published IPv4 and DNS settings.
+- **Attempts 100-101:** Reused completed transmit slots, loaded a public HTTPS page in Safari, and removed the scheduled disconnect. The connection held for hours and reconnected after an overnight lid close.
 
 ### Offline installation milestone
 
@@ -82,7 +83,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-97, including the BE211 Wi-Fi experiments.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-101, including the BE211 Wi-Fi experiments.
 
 ### Visual archive
 
@@ -94,7 +95,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 
 1. **USB compatibility:** Investigate xHCI port creation, USB 2.0 enumeration, and reliable external-device recognition.
 2. **Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
-3. **Wireless networking:** Test ordinary IP traffic, internet access, and connection stability on the BE211.
+3. **Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios.
 4. **System stability and power:** Test battery reporting, sleep/wake, restarts, and power management on the installed system.
 5. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
 

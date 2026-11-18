@@ -1,6 +1,6 @@
 # Framework Laptop 13 Pro macOS Sequoia technical findings
 
-**Coverage:** Boot attempts 1-97, through November 17, 2026  
+**Coverage:** Boot attempts 1-101, through November 18, 2026  
 **Platform:** Framework Laptop 13 Pro, Intel Panther Lake  
 **Evidence:** [Boot attempt journal](logs/fw13p-attempts-sequoia.md) and [visual archive](logs/fw13p-visual-sequoia/)
 
@@ -8,7 +8,7 @@
 
 I went from a boot with no visible kernel output to graphical Sequoia Recovery, then opened Terminal and installed macOS Sequoia 15.8.3 offline. The installed desktop runs with basic display output, a built-in PS/2 keyboard, and a native I²C touchpad with gestures and configurable settings. Native touchpad stability has limited repeat testing.
 
-The latest verified milestone is **native macOS Wi-Fi association and DHCP on the Intel BE211**. In Attempt 97, I joined an open 2.4 GHz network from the macOS Wi-Fi menu and verified that macOS obtained and published an IPv4 lease on `en0` and resolved the router over ARP. The diagnostic association ran for 15 seconds. The current data path carries DHCP and ARP. I still need to verify ordinary IP traffic, internet access, and long-running connectivity.
+I confirmed **Safari HTTPS over the Intel BE211** in Attempt 100 on an open 2.4 GHz network. In Attempt 101, I removed the scheduled disconnect and used Wi-Fi for 3–4 hours without an unexpected drop. It also reconnected automatically after I opened the lid the next morning. The current path supports IPv4 DNS and HTTPS over TCP. Secured networks and additional bands remain open work.
 
 ## Test platform and baselines
 
@@ -136,7 +136,15 @@ The management exchange and low-rate data test exercised distinct firmware paths
 
 **97: macOS obtained and published its own lease.** I updated the extended BSS getter to use six legacy rates from the live BE211 association. The query returned success and native WCL reported associated and link up. On channel 11, the unmodified macOS DHCP client sent Discover and Request through `en0`. Firmware reported success with zero retries on both, and the driver delivered Offer and ACK back to macOS. IPConfiguration entered BOUND, assigned a /22 IPv4 address, received the router's ARP reply, and published IPv4, DNS and DHCP state. Tcpdump independently observed the exchange. The full window reported 13 TX submissions, seven frames queued for BSD input, and an ACK forwarded.
 
-Scheduled teardown removed the address. A native leave during cleanup coincided with a queue-removal and worker result of 6 after the packet window itself reported success. This is consistent with a teardown race. An automatic rejoin obtained another ACK and reached BOUND. The capture did not cover the entire second window. The driver still restricts the test data path to DHCP and ARP on an open 2.4 GHz network.
+Scheduled teardown removed the address. A native leave during cleanup coincided with a queue-removal and worker result of 6 after the packet window itself reported success. This is consistent with a teardown race. An automatic rejoin obtained another ACK and reached BOUND. The capture did not cover the entire second window. That build limited the test data path to DHCP and ARP on an open 2.4 GHz network.
+
+### Attempts 98-101 - Safari and sustained Wi-Fi
+
+**98-99.** I first added a gateway ping after native DHCP. Firmware completed three ICMP Echo Requests with zero retries, and the gateway answered ARP. No echo replies reached macOS. I then added IPv4 DNS and HTTPS over TCP. The capture showed DNS replies and acknowledged payload in both directions on port 443. Background macOS traffic exhausted the 76 web transmit slots, and the driver counted 279 drops at that limit. Safari reported no internet connection. The capture did not establish the cause of the browser error.
+
+**100.** I replaced the single-use transmit slots with a 128-slot ring. The driver reclaimed descriptors only when firmware reported a scheduler position within the outstanding range. I loaded `example.com` in Safari on CISD-Guest. The capture showed matching DNS replies and two-way TCP payload with one of the returned addresses on port 443. Over 45 seconds, the ring wrapped 261 times and reclaimed all 33,444 submitted descriptors. Peak occupancy was 32, with zero ring-full events or ignored completions. Firmware reported 27 failed completions. The scheduled teardown still coincided with the late WCL leave and queue-removal result 6.
+
+**101.** I removed the scheduled disconnect and took the SSID from the macOS join request. The driver still checks for an eligible open 2.4 GHz network and honors a valid requested BSSID. I used Wi-Fi for 3–4 hours without an unexpected disconnect. Wi-Fi reconnected automatically after I reopened the lid the next morning. I did not record the network name, the exact sleep state or the reconnect latency.
 
 ## 5. Current status and evidence limits
 
@@ -148,7 +156,7 @@ Scheduled teardown removed the address. A native leave during cleanup coincided 
 | Keyboard | Functional built-in PS/2 input. Skipping the PS/2 boot reset improved captured startup behavior. | Reliability across all restart paths. |
 | Touchpad | Native PIXA3854 input with gestures and settings. | Long-run stability, sleep/wake and continued coexistence with PS/2 fallback. |
 | External USB | Both xHCI controllers started in Recovery. A manually mounted ExFAT partition was usable for offline installation in a later run. | Missing USB 2 port publication, general hotplug and reliable external HID. |
-| Wi-Fi | Native discovery, open 2.4 GHz association, macOS DHCP, and router ARP. | General IP traffic, actual DNS resolution, internet and captive portal access, durable joins, secured networks and other bands. |
+| Wi-Fi | Native open 2.4 GHz joins, DHCP, DNS and Safari HTTPS. One 3–4-hour run and one automatic reconnect after an overnight lid close. | Repeatability across access points and sleep states, broader traffic support, captive portals, secured networks and other bands. |
 | Other devices | Audio, Bluetooth, webcam and power features have no completed verification in this series. | Functional peripheral and power-management tests. The firmware coexistence command is separate from Bluetooth function. |
 
 ### Evidence and reproducibility
@@ -156,4 +164,4 @@ Scheduled teardown removed the address. A native leave during cleanup coincided 
 - I collected early evidence from OpenCore files, Linux ACPI and PCI captures, photographs, and traced entry and return markers. Screen captures can omit earlier lines. The absence of a return marker has lower evidentiary weight than a confirmed return code.
 - Recovery terminal photos record the actual OS version, loaded drivers and registry state. The post-install collector captured early and late kernel logs and IORegistry. Service registration establishes attachment, while typing, pointer movement and gestures require functional observation.
 - I archived staged EFI files, changed-file hashes, OpenCore 1.0.8 validator output and file references where available. For later Wi-Fi tests, I also saved driver source patches, build logs and captured output. A manifest match establishes the tested files when measured. Exact USB matches were unavailable for some early and follow-up runs.
-- The DHCP findings distinguish firmware TX completion, packets visible on `en0`, and IPConfiguration publishing a lease. Attempt 97 provides evidence at all three boundaries. It does not establish a longer-lived connection or successful DNS queries.
+- Attempt 97 verified DHCP at three points, from firmware TX completion through packets visible on `en0` to IPConfiguration publishing the lease. Attempt 100 pairs the Safari page load with DNS and TCP capture. My Attempt 101 duration and reconnect findings come from direct use without a collector trace.
