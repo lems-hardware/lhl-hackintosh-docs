@@ -1,6 +1,6 @@
 # Framework Laptop 13 Pro macOS Sequoia technical findings
 
-**Coverage:** Boot attempts 1-103, through November 18, 2026\
+**Coverage:** Boot attempts 1-109, through November 19, 2026\
 **Platform:** Framework Laptop 13 Pro, Intel Panther Lake  
 **Evidence:** [Boot attempt journal](logs/fw13p-attempts-sequoia.md) and [visual archive](logs/fw13p-visual-sequoia/)
 
@@ -11,6 +11,8 @@ I went from a boot with no visible kernel output to graphical Sequoia Recovery, 
 I confirmed **Safari HTTPS over the Intel BE211** in Attempt 100 on an open 2.4 GHz network. In Attempt 101, I removed the scheduled disconnect and used Wi-Fi for 3–4 hours without an unexpected drop. It also reconnected automatically after I opened the lid the next morning. The current path supports IPv4 DNS and HTTPS over TCP. Secured networks and additional bands remain open work.
 
 I also brought up onboard audio in Attempt 103. The ALC285 microphone, speakers, wired headphones, volume/mute controls and automatic jack switching work, including across restarts. Extended audio stability and sleep/wake remain unverified.
+
+I subsequently enabled the missing USB 2 ports, verified the external mouse and reduced receiver reconnect delay. Attempt 109 also published battery data and confirmed charger transitions. Sleep/wake, CPU power efficiency and wider USB qualification remain open.
 
 ## Test platform and baselines
 
@@ -160,19 +162,50 @@ The cold-boot inventory listed Built-in Microphone, Built-in Line Input and Buil
 
 The initial Attempt 102 driver copy reported filesystem metadata errors. Attempt 103 archived the installed files and kernel collection directly, with an empty archive error log. The saved Attempt 103 evidence was a partial collector folder without its completion marker or final outer archive. Restart and functional follow-ups were reported separately, without additional captures. SimpleHDA was not used on this Sequoia system. No new manual AppleHDA binary patch was added.
 
-## 6. Current status and evidence limits
+## 6. Installed-system USB ports and reconnect timing
+
+### Attempts 104-105 - Port descriptions blocked USB 2 publication
+
+I inspected the installed 24H241 kernel collection separately from the earlier Recovery image. Read-only tracing showed correct protocol discovery and attempted creation of all hardware ports. AppleUSBXHCIPCI returned null for all 12 XHCI ports and TXHC USB 2 port 1, while TXHC SuperSpeed ports 2-5 returned objects. Both createPorts functions returned zero despite the missing ports. The firmware RHUB descriptions exposed only USR1/USR2 under XHCI and the four SuperSpeed children under TXHC.
+
+In Attempt 105, official USBToolBox 1.2.0 bypassed the runtime ACPI child descriptions and supplied an explicit map: XHCI hardware ports 1-10 as HS01-HS10 and 11-12 as SS01-SS02, with TXHC hardware port 1 as HS01 and 2-5 as SS01-SS04. All 17 port-creation calls then returned objects. This combined experiment fixes the observed failure but does not isolate the separate contribution of ACPI bypass and map injection.
+
+The Logitech 046d:c542 receiver worked on top-right XHCI HS02 at 12 Mb/s, including buttons, scrolling and reconnect. The internal webcam enumerated on HS06 in both USB and Camera inventories, and Goodix enumerated on HS07. Those inventories do not establish working video or fingerprint authentication. The SD Expansion Card remained at 5 Gb/s with FILES writable. Connector types are still provisional 255 values, and other physical ports, Type-C orientation and sleep/wake are unqualified.
+
+### Attempts 106-108 - Avoiding the slow reset retry sequence
+
+Attempt 106 traced connection handling, resetAndCreateDevice and enumeration completion. Slow cycles returned null six times at increasing arguments 50-300, then succeeded at 350, with approximately one-second waits between attempts. Connection-handler entry to HID startup took about 8.2 seconds. Once enumeration succeeded, HID startup took only about 25-32 ms. One trial reached HID startup quickly despite a later manual pointer-response mark, so reset retries did not explain every perceived delay.
+
+The exact installed binary converts the unsigned argument to a millisecond-scale deadline for its reset loop. Attempt 107 substituted a minimum of 350 only on HS02 at location 14200000. The original function still runs once and determines its result. This affects any USB 2 device on that one mapped port, not just Logitech. The three reconnects reached HID startup in 1.95, 0.50 and 0.55 seconds. The first still needed one retry.
+
+Attempt 108 retained the policy and observed existing host createDevice/getPortStatus calls without adding status queries. All six prompted reconnects succeeded on the first reset call and reached HID startup in 0.52-0.54 seconds. Human insertion-to-pointer intervals were 0.99-1.55 seconds, including reaction time. Captured successful creation used status 0x1102. Disconnected queries returned 0x2. The host trace reached its 128-call limit before the sixth insertion, while the separate reset/enumeration trace continued and confirmed success. The intermittent failure did not recur, so its exact cause remains unresolved. No broader stability or universal timing guarantee follows from this run.
+
+## 7. Battery reporting and charger detection
+
+### Attempt 109 - Matching SMCBatteryManager published the battery
+
+The preceding macOS registry already exposed BAT1 (PNP0C0A) and ACAD (ACPI0003), but SMCBatteryManager was absent. The archived firmware provides _BIF, _BIX, _BST and _PSR through a ByteAcc SystemIO region. This did not justify treating its wider declared fields as an EmbeddedControl access problem. I retained the working EC stub and all other ACPI tables.
+
+Adding official SMCBatteryManager 1.3.8 after matching VirtualSMC 1.3.8 found one battery and one adapter, registered the plugin and enabled AppleSmartBatteryManager. In the cold-boot capture, pmset reported 30% charging on AC, 32% discharging after unplugging, then 33% charging after reconnecting. ExternalConnected and IsCharging changed correctly. The battery service reported 4640 mAh design capacity, 4514 mAh full capacity, 42 cycles and voltage/current data. System Information reported Normal condition. These populated values are not a calibration or controlled power-consumption measurement.
+
+I withdrew my initial report of frozen status after allowing for periodic updates. The matching source uses 1-second quick and 60-second normal polling plus notifications, so this does not prove a fixed 30-second interval. All saved phases show the appropriate power state. Other functions were reported working. Restart behavior, long-run accuracy, charge-limit/full-charge boundaries, lid events, sleep/wake and CPU power efficiency remain unverified. The collector made no persistent power-setting changes.
+
+See the [measurement and evidence summary](logs/usb-power-evidence.md) for capture digests, trial timings and scope limits.
+
+## 8. Current status and evidence limits
 
 | Area | Verified outcome | Open question |
 | --- | --- | --- |
 | Boot and CPU | Recovery, Terminal and the installed desktop boot via OpenCore with CPUID emulation, classic firmware LAPIC entries and the Darwin CPU SSDT. | Long-run stability and native CPU power management. |
-| Storage and installation | Internal NVMe initialization, an offline APFS installation and a bootable installed desktop. | General external device support and reproducibility across configurations. |
+| Storage and installation | Internal NVMe initialization, an offline APFS installation and a bootable installed desktop. | Broader external device support and installation reproducibility across configurations. |
 | Display | Basic output on the built-in panel and usable desktop. | Xe3/Metal acceleration, scaling behavior and graphics power usage. |
 | Keyboard | Functional built-in PS/2 input. Skipping the PS/2 boot reset improved captured startup behavior. | Reliability across all restart paths. |
 | Touchpad | Native PIXA3854 input with gestures and settings. | Long-run stability, sleep/wake and continued coexistence with PS/2 fallback. |
-| External USB | Both xHCI controllers started in Recovery. A manually mounted ExFAT partition was usable for offline installation in a later run. | Missing USB 2 port publication, general hotplug and reliable external HID. |
+| External USB | All 17 mapped ports publish, the tested Logitech mouse works, and the SD reader remains accessible at 5 Gb/s. Six latest same-port reconnects reached HID startup in 0.52-0.54 s. | Provisional connector types, other ports/orientations, occasional reset retry and sleep/wake. |
 | Wi-Fi | Native open 2.4 GHz joins, DHCP, DNS and Safari HTTPS. One 3–4-hour run and one automatic reconnect after an overnight lid close. | Repeatability across access points and sleep states, broader traffic support, captive portals, secured networks and other bands. |
 | Audio | ALC285 microphone, speakers, wired headphones, volume/mute and automatic jack switching, including across restarts. | Extended stability, sleep/wake and separately tested line input. |
-| Other devices | Bluetooth, webcam and power features have no completed verification in this series. | Functional peripheral and power-management tests. The firmware coexistence command is separate from Bluetooth function. |
+| Battery | Battery data publication and charger disconnect/reconnect confirmed in a cold boot with SMCBatteryManager 1.3.8. | Restart behavior, accuracy, charge limits and long-run stability. |
+| Other devices and power | Webcam and fingerprint device enumerate. | Actual video, Bluetooth, fingerprint function, lid behavior, sleep/wake and CPU power efficiency. Firmware coexistence success does not establish Bluetooth function. |
 
 ### Evidence and reproducibility
 
@@ -186,5 +219,7 @@ The initial Attempt 102 driver copy reported filesystem metadata errors. Attempt
 OpenCore, Lilu, VirtualSMC, VoodooPS2 and AppleALC are [Acidanthera projects](https://github.com/acidanthera). Native touchpad support builds on [VoodooI2C](https://github.com/VoodooI2C/VoodooI2C) and [VoodooInput](https://github.com/acidanthera/VoodooInput). The wireless foundation is [OpenIntelWireless/itlwm](https://github.com/OpenIntelWireless/itlwm) and [Ersiter's BE200 fork](https://github.com/Ersiter/AirportItlwm-BE200), with Intel firmware and the original component notices retained.
 
 [Mubai's hardware follow-up](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs/blob/5f0de92f42b3655d6539b91fe3a630b8262096f3/HARDWARE_FOLLOWUP_2026-11-13.md) supplied the controller compatibility-ID lead for Attempt 103. AppleALC's [controller definitions](https://github.com/acidanthera/AppleALC/blob/1.9.8/Resources/Controllers.plist) and [ALC285 resources](https://github.com/acidanthera/AppleALC/blob/1.9.8/Resources/ALC285/Info.plist) establish the upstream patch and layout provenance. Layout 66 is credited there to R-a-s-c-a-l. My Framework-specific outcomes and evidence limits are recorded above.
+
+[USBToolBox 1.2.0](https://github.com/USBToolBox/kext/tree/1.2.0), by Dhinak G. and contributors, provides the runtime ACPI bypass and port-map injection used in Attempt 105. lvs1974 and DebugEnhancer contributors supplied the tracing foundation. usrsse2 and [VirtualSMC contributors](https://github.com/acidanthera/VirtualSMC/tree/1.3.8) supplied SMCBatteryManager. My diagnostic routes and scoped reset-window experiment were derived from the exact installed binary.
 
 Installer retrieval and Linux cross-builds used [gibMacOS](https://github.com/corpnewt/gibMacOS), [MacKernelSDK](https://github.com/acidanthera/MacKernelSDK), LLVM/Clang and [cctools-port](https://github.com/tpoechtrager/cctools-port). Apple and all upstream contributors retain credit and rights for their components.

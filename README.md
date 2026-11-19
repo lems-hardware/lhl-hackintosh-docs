@@ -19,7 +19,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-Research status: subsystem bring-up is the current focus. Onboard audio is working, and further Wi-Fi development is paused.
+Research status: subsystem bring-up is the current focus. Onboard audio, the tested USB mouse path and battery/charger reporting are working. Further Wi-Fi development is paused.
 
 | Component                       | Status                  | Notes                                                                                                                                                                                                                   |
 | ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -31,14 +31,17 @@ Research status: subsystem bring-up is the current focus. Onboard audio is worki
 | Integrated graphics/display     | Partial                 | Basic display output works without Xe3/Metal acceleration                                                                                                                                                               |
 | Internal keyboard               | Working                 | VoodooPS2                                                                                                                                                                                                               |
 | Touchpad                        | Working                 | Gestures, scrolling, and Trackpad settings work                                                                                                                                                                         |
-| USB controllers                 | Partial                 | Both xHCI controllers initialize, USB 2.0 root-hub port enumeration remains unresolved                                                                                                                                  |
-| External USB storage            | Partial                 | Installer USB's ExFAT partition was accessible after manual mounting in Recovery, general device support remains unresolved                                                                                             |
+| USB controllers | Working in tested configuration | USBToolBox and an explicit map create all 12 XHCI and five TXHC ports. Connector types remain provisional, with other ports and Type-C orientation unverified. |
+| External USB storage | Working in tested setup | The SD Expansion Card enumerates at 5 Gb/s and FILES is writable. Broader device coverage and sleep/wake remain unverified. |
+| External USB mouse | Working on tested port | Logitech M330 receiver buttons, scrolling and reconnect work on top-right XHCI HS02. Six latest reconnects reached HID startup in 0.52-0.54 s with a scoped 350 ms reset window. |
 | Native I²C touchpad             | Working                 | VoodooI2CHID and VoodooInput attach in polling mode for touch reports, appears to be reliable throughout experiments                                                                                                    |
 | Wi-Fi                           | Partial                 | The experimental BE211 driver loaded a public HTTPS page in Safari on an open 2.4 GHz network. A follow-up ran for 3–4 hours without unexpected disconnects and reconnected automatically after an overnight lid close. |
 | GPU acceleration                | Unsupported             | No functional Xe3 graphics acceleration                                                                                                                                                                                 |
 | Onboard audio | Working in tested functions | ALC285 microphone, speakers, wired headphones, volume/mute and automatic jack switching work, including across restarts. Extended stability and sleep/wake remain unverified. |
-| Bluetooth, webcam | Not yet verified | Installed-system testing pending |
-| Sleep/wake and power management | Not yet verified        | Installed-system testing pending                                                                                                                                                                                        |
+| Webcam | Enumerated | The internal webcam appears in USB and Camera inventories. Video capture has not been tested. |
+| Bluetooth | Not yet verified | Installed-system functional testing pending. |
+| Battery and charger reporting | Working in captured cold boot | SMCBatteryManager 1.3.8 publishes battery data and correctly reports AC/battery/AC transitions. Restart behavior and long-run accuracy remain unverified. |
+| Sleep/wake and CPU power management | Not yet verified | Battery publication is confirmed, while sleep, lid events and CPU power efficiency need separate testing. |
 
 These statuses may be hardware specific to this configuration or potentially even to this laptop only.
 
@@ -61,6 +64,10 @@ These statuses may be hardware specific to this configuration or potentially eve
 - **Attempts 100-101:** Reused completed transmit slots, loaded a public HTTPS page in Safari, and removed the scheduled disconnect. The connection held for hours and reconnected after an overnight lid close.
 - **Attempts 102-103:** Located an AppleHDAController probe failure and enabled ALC285 audio using AppleALC 1.9.8, layout 66 and the `8086:51CA` controller compatibility ID. Microphone, speakers, wired headphones, volume/mute, automatic jack switching and operation across restarts were confirmed.
 
+- **Attempts 104-105:** Traced missing USB port creation and added USBToolBox 1.2.0 with an explicit Framework map. All 17 ports were created, the Logitech receiver worked, and the webcam and fingerprint device enumerated.
+- **Attempts 106-108:** Located slow reconnects in repeated null device-creation results. A 350 ms reset window scoped to the receiver port reduced reconnect time. All six latest trials succeeded on the first reset call, reaching HID startup in about half a second. An earlier trial still needed one retry, so broad stability is not established.
+- **Attempt 109:** Added matching SMCBatteryManager 1.3.8. macOS published battery information and correctly switched between charging, discharging and charging after charger removal/reconnection.
+
 ### Offline installation milestone
 
 The successful installation used:
@@ -81,7 +88,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-103, including the BE211 Wi-Fi experiments and onboard audio bring-up.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-109, including BE211 Wi-Fi, onboard audio, USB enumeration/reconnect and battery reporting.
 
 ### Visual archive
 
@@ -92,8 +99,8 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 ## Research Priorities
 
 1. **(Paused) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. WPA2/WPA3 and 5 GHz support remain open work.
-2. **System stability and power:** Test battery reporting, sleep/wake, restarts, and power management on the installed system.
-3. **USB compatibility:** Investigate xHCI port creation, USB 2.0 enumeration, and reliable external-device recognition.
+2. **System stability and power:** Extend the confirmed battery/charger test across restarts, then test sleep/wake, lid behavior and CPU power efficiency.
+3. **USB compatibility:** Qualify additional physical ports, Type-C orientation and sleep/wake. Correct provisional connector metadata and monitor the remaining occasional reconnect retry.
 4. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
 5. **(Complete) Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
 
@@ -117,4 +124,6 @@ Third-party code, software, and other materials retain their respective licenses
 - [VoodooI2C contributors](https://github.com/VoodooI2C/VoodooI2C) and [VoodooInput contributors](https://github.com/acidanthera/VoodooInput) for the native touchpad stack.
 - [OpenIntelWireless](https://github.com/OpenIntelWireless/itlwm) and [Ersiter's AirportItlwm-BE200 fork](https://github.com/Ersiter/AirportItlwm-BE200) for the wireless driver foundation. Intel supplies the firmware under its separate redistribution terms. My BE211 changes and build provenance are in [lhl-be211-wireless](https://github.com/lems-hardware/lhl-be211-wireless).
 - [yangyishuo1124 / Mubai](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs/blob/5f0de92f42b3655d6539b91fe3a630b8262096f3/HARDWARE_FOLLOWUP_2026-11-13.md) for documenting the Panther Lake audio controller compatibility-ID experiment that informed Attempt 103. That record also cites [VedCloud's Meteor Lake work](https://github.com/VedCloud/Meteor-Lake-Xe-LPG-Metal-Graphics) as an earlier `51CA` compatibility reference. I retained my Framework's ALC285 layout and verified the result on this machine.
+- [USBToolBox / Dhinak G. and contributors](https://github.com/USBToolBox/kext/tree/1.2.0) for runtime ACPI port-description bypass and map injection. The Framework map and reset-window experiment were derived from this machine's captures and exact installed kernel collection.
+- lvs1974 and DebugEnhancer contributors for the tracing foundation, and usrsse2 and VirtualSMC contributors for SMCBatteryManager.
 - [corpnewt / gibMacOS](https://github.com/corpnewt/gibMacOS), [MacKernelSDK](https://github.com/acidanthera/MacKernelSDK) and [cctools-port](https://github.com/tpoechtrager/cctools-port) for installer retrieval and build tooling. Apple and the upstream operating-system projects retain credit and rights for their software and driver sources.
