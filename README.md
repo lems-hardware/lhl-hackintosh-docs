@@ -72,7 +72,9 @@ These statuses may be hardware specific to this configuration or potentially eve
 - **Attempts 112-114:** Investigated MeowXE3 injection failure, verified its graphics imports in the installed system collection and successfully loaded a separate Panther Lake xe core at idle stage 0.
 - **Attempts 115-116:** Caught two failed runtime patch applications before the collector issued a stage request. These are separate attempts, with the original capture labels preserved.
 - **Attempts 117-118:** Directly adapted the pinned core for B082 metadata-only checks, then passed stages 1-3. PCI bus setup preserved the display metadata and progressing frame counter. Firmware loading, rendering and acceleration were not tested.
-- **Attempts 119-123:** Fixed a stage-4 panic caused by a sleeping DRM SRCU reader using ordinary RCU. Both GTs initialized, six engines passed command completion and GPU memory readback, and a userspace process queried xe 1.1.0 successfully. Rendering and Metal remain untested.
+- **Attempts 119-120:** Diagnosed a stage-4 panic in a sleeping DRM SRCU reader and added a scoped compatibility fix. Both GTs initialized with GuC 70.72.1 running and submission enabled.
+- **Attempts 121-122:** Completed empty batches on all six engines, then verified distinct GPU-written values through CPU readback. Display metadata stayed unchanged.
+- **Attempt 123:** Queried xe 1.1.0 from a root macOS process through the render node and closed it successfully. Userspace GPU workloads, rendering and Metal remain untested.
 
 ### Offline installation milestone
 
@@ -94,7 +96,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-123, including BE211 Wi-Fi, audio, USB, battery/lid reporting and the first bounded Xe3 core tests. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-123, including BE211 Wi-Fi, audio, USB, battery/lid reporting and Xe3 initialization, engine completion, memory readback and the first userspace query. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
 
 ### Visual archive
 
@@ -107,7 +109,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 1. **(Paused) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. WPA2/WPA3 and 5 GHz support remain open work.
 2. **System stability and power:** Qualify battery reporting across restarts and investigate the boot framebuffer sleep preventer and CPU power efficiency. Lid notifications already work.
 3. **USB compatibility:** Qualify additional physical ports, Type-C orientation and sleep/wake. Correct provisional connector metadata and monitor the remaining occasional reconnect retry.
-4. **GPU acceleration:** Review the xe stage-4 initialization path and B082 memory classification after the successful stage-3 bus and metadata tests. Firmware loading, rendering and acceleration remain unverified.
+4. **GPU acceleration (current focus):** Test bounded userspace buffer allocation, mapping and submission after the successful xe version query. Review Sequoia compatibility of the accelerator and userland stack before rendering or Metal tests.
 5. **(Complete) Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
 
 ## Project Scope
