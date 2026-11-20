@@ -1,6 +1,6 @@
 # Framework Laptop 13 Pro macOS Sequoia technical findings
 
-**Coverage:** Boot attempts 1-109, through November 19, 2026\
+**Coverage:** Boot attempts 1-118, through November 20, 2026\
 **Platform:** Framework Laptop 13 Pro, Intel Panther Lake  
 **Evidence:** [Boot attempt journal](logs/fw13p-attempts-sequoia.md) and [visual archive](logs/fw13p-visual-sequoia/)
 
@@ -13,6 +13,8 @@ I confirmed **Safari HTTPS over the Intel BE211** in Attempt 100 on an open 2.4 
 I also brought up onboard audio in Attempt 103. The ALC285 microphone, speakers, wired headphones, volume/mute controls and automatic jack switching work, including across restarts. Extended audio stability and sleep/wake remain unverified.
 
 I subsequently enabled the missing USB 2 ports, verified the external mouse and reduced receiver reconnect delay. Attempt 109 also published battery data and confirmed charger transitions. Sleep/wake, CPU power efficiency and wider USB qualification remain open.
+
+I then loaded a separate Panther Lake xe core and passed bounded stages 1-3 on B082. Display-register and page-table comparisons stayed consistent through PCI bus setup, with a progressing frame counter. This is a kernel bring-up milestone, not graphics acceleration.
 
 ## Test platform and baselines
 
@@ -192,20 +194,58 @@ I withdrew my initial report of frozen status after allowing for periodic update
 
 See the [measurement and evidence summary](logs/usb-power-evidence.md) for capture digests, trial timings and scope limits.
 
-## 8. Current status and evidence limits
+## 8. Display power and Xe3 core bring-up
+
+### Attempts 110-111 - Lid notifications and the boot framebuffer
+
+I captured menu-sleep and lid-close/open behavior without changing persistent power settings. The lid events were about 32.5 seconds apart. The kernel repeatedly rejected full sleep with kPMChildPreventSystemSleep and retained .Display_boot in the system-preventer list. The boot time stayed unchanged and the sleep/wake counter remained zero. DarkWake/FullWake labels therefore do not establish completed hardware sleep and resume. This confirms lid detection and identifies a display power-management lead, not a working sleep implementation.
+
+The installed IONDRVSupport and IOGraphicsFamily modules were both version 599. The initial collector skipped the 373112832-byte system collection because its cap was 256 MiB. That collection was captured separately in Attempt 113. I did not clear the sleep-preventer vote or patch display power behavior.
+
+### Attempts 112-113 - MeowXE3 dependency resolution
+
+I tried the MeowXE3 1.0.12 core with -nvoff, leaving out its display replacement, Metal plugin and installed-system deployment. OpenCore reported IOGraphicsFamily absent from the Boot Kernel Collection, used a symbol-only stub, failed vtable patching and rejected injection with Invalid Parameter. The core never loaded. This does not test its runtime disable gate or B082 initialization.
+
+The exact installed SystemKernelExtensions.kc contains IOGraphicsFamily 599 with the loaded UUID. All 76 IOFramebuffer import symbols used by the release core are present, including the parent vtable and metaclass. This strengthens the dependency-timing explanation, but symbol presence does not prove vtable-slot ABI compatibility or identify the exact failed table. The release Metal plugin declares minimum macOS 26.0 and is not qualified for Sequoia. The release firmware inventory also does not establish support for this panel's display IP 30.00.
+
+### Attempt 114 - A separate core loads at stage 0
+
+I selected Mubai's pinned Panther Lake xe core, derived from the InSnh-Gd WTLIntelGfx fork. This binary has no IOFramebuffer imports or IOGraphicsFamily dependency. All 444 imported symbol names exist in the exact archived installed Boot Kernel Collection, although that alone is not an ABI test.
+
+The corrected boot loaded the expected 0.0.47 UUID and XeGfxResident policy ptl-worker-heartbeat-v24. Stage and running stayed zero, with an empty environment and zero stage results. Desktop and input worked. My initial submission had booted the older Attempt 112 EFI and was retained as a copy mismatch. OpenCore's attempted Exclude blocker for the installed older 0.0.48 driver returned Unsupported. I did not remove that installed copy or claim the exclusion succeeded.
+
+### Attempts 115-116 - Runtime patch application failed before probing
+
+Attempt 115 could not resolve the two local-symbol Base anchors. Attempt 116 removed those anchors, but OpenCore still replaced zero occurrences of either exact byte signature. Both collectors refused the request before any metadata test ran. These are distinct attempts, not revisions. The original second capture is still named attempt-115-20261119-160603-671.tgz and is explicitly indexed as Attempt 116.
+
+### Attempts 117-118 - Metadata baseline and PCI bus setup
+
+I directly adapted two verified instruction bytes in the pinned core. One selects its existing metadata-only branch for B082 instead of B0A0. The other limits manual stage requests, first to 2 and then to 3. These changes do not spoof the GPU identity or import B0A0 initialization workarounds. Each variant has a distinct UUID and refreshed original ad-hoc code-page hashes. No installed driver or cache was changed. Automatic startup remained at stage 0.
+
+Attempt 117 passed stages 1-2. The metadata comparison returned 1 and the frame counter advanced by 13. The framebuffer candidate covered 5400 pages and 22118400 bytes at 0x7c800000. CPU framebuffer access stayed blocked and pixel verification stayed false.
+
+Attempt 118 repeated that prerequisite successfully, then passed stage 3. vgapci0 attached to 8086:b082 and its drmn0 child remained unbound. The post-bus metadata comparison returned 1 with unchanged metadata and a frame-counter advance of 12. All three stage results were 1, the core ended idle at stage 3 and I reported everything operational. The existing 2880 x 1920 framebuffer stayed active.
+
+Stage 3 initializes PCI/DMA shim state and the newbus wrapper. GPU module SYSINIT registration belongs to stage 4. The DMA helper logged no IOMMU, consistent with disabled VT-d. It also called B082 older than gen11 because its generic stolen-memory classification tables lack that ID. That fallback string does not identify the hardware generation. Whether the later xe path needs those skipped generic globals must be checked before changing that classification or dismissing it.
+
+These captures do not establish GuC/other GPU firmware initialization, engine completion, pixel correctness, Metal, accelerated WindowServer or native display takeover. Working display metadata and a published resident service are narrower results. Research into MeowXE3, Mubai's port and the same-model virtualized VF work informs the approach, but another machine's acceleration is not a result on this Framework.
+
+See the [graphics evidence summary](logs/graphics-evidence.md) for exact core identities, original capture digests, provenance and test boundaries.
+
+## 9. Current status and evidence limits
 
 | Area | Verified outcome | Open question |
 | --- | --- | --- |
 | Boot and CPU | Recovery, Terminal and the installed desktop boot via OpenCore with CPUID emulation, classic firmware LAPIC entries and the Darwin CPU SSDT. | Long-run stability and native CPU power management. |
 | Storage and installation | Internal NVMe initialization, an offline APFS installation and a bootable installed desktop. | Broader external device support and installation reproducibility across configurations. |
-| Display | Basic output on the built-in panel and usable desktop. | Xe3/Metal acceleration, scaling behavior and graphics power usage. |
+| Display | Basic desktop output, resident xe core load and successful metadata/PCI bus stages 1-3. | Stage-4 initialization, GPU firmware, rendering, Xe3/Metal acceleration and graphics power usage. |
 | Keyboard | Functional built-in PS/2 input. Skipping the PS/2 boot reset improved captured startup behavior. | Reliability across all restart paths. |
 | Touchpad | Native PIXA3854 input with gestures and settings. | Long-run stability, sleep/wake and continued coexistence with PS/2 fallback. |
 | External USB | All 17 mapped ports publish, the tested Logitech mouse works, and the SD reader remains accessible at 5 Gb/s. Six latest same-port reconnects reached HID startup in 0.52-0.54 s. | Provisional connector types, other ports/orientations, occasional reset retry and sleep/wake. |
 | Wi-Fi | Native open 2.4 GHz joins, DHCP, DNS and Safari HTTPS. One 3–4-hour run and one automatic reconnect after an overnight lid close. | Repeatability across access points and sleep states, broader traffic support, captive portals, secured networks and other bands. |
 | Audio | ALC285 microphone, speakers, wired headphones, volume/mute and automatic jack switching, including across restarts. | Extended stability, sleep/wake and separately tested line input. |
 | Battery | Battery data publication and charger disconnect/reconnect confirmed in a cold boot with SMCBatteryManager 1.3.8. | Restart behavior, accuracy, charge limits and long-run stability. |
-| Other devices and power | Webcam and fingerprint device enumerate. | Actual video, Bluetooth, fingerprint function, lid behavior, sleep/wake and CPU power efficiency. Firmware coexistence success does not establish Bluetooth function. |
+| Other devices and power | Webcam and fingerprint device enumerate. Lid-close/open events are detected. | Actual video, Bluetooth, fingerprint function, full sleep/resume and CPU power efficiency. The boot framebuffer currently prevents full sleep. Firmware coexistence success does not establish Bluetooth function. |
 
 ### Evidence and reproducibility
 
@@ -223,3 +263,5 @@ OpenCore, Lilu, VirtualSMC, VoodooPS2 and AppleALC are [Acidanthera projects](ht
 [USBToolBox 1.2.0](https://github.com/USBToolBox/kext/tree/1.2.0), by Dhinak G. and contributors, provides the runtime ACPI bypass and port-map injection used in Attempt 105. lvs1974 and DebugEnhancer contributors supplied the tracing foundation. usrsse2 and [VirtualSMC contributors](https://github.com/acidanthera/VirtualSMC/tree/1.3.8) supplied SMCBatteryManager. My diagnostic routes and scoped reset-window experiment were derived from the exact installed binary.
 
 Installer retrieval and Linux cross-builds used [gibMacOS](https://github.com/corpnewt/gibMacOS), [MacKernelSDK](https://github.com/acidanthera/MacKernelSDK), LLVM/Clang and [cctools-port](https://github.com/tpoechtrager/cctools-port). Apple and all upstream contributors retain credit and rights for their components.
+
+Graphics credits: [watchthelight / WTLIntelGfx](https://github.com/watchthelight-labs/WTLIntelGfx), [InSnh-Gd's Panther Lake fork](https://github.com/InSnh-Gd/WTLIntelGfx/tree/5ffc79fb9e53eb820899edd644b83681bea3aa39) and [Mubai's pinned work](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs/tree/180a42fafd1e1b8116bdc1f0312dec54be3812c5) provide the core and metadata diagnostics. [cuadra8998 / MeowXE3](https://github.com/cuadra8998/MeowXE3) and [ericek111's Xe3 VF work](https://github.com/ericek111/vibe-nullmoth-xe3-qemu) provide comparison research. NullMoth, HighDelay, Intel, Linux DRM/xe, FreeBSD drm-kmod/LinuxKPI, Mesa, libdrm, LLVM and linux-firmware contributors retain credit and their original licenses. The VF work uses a Linux-owned physical function and virtualized scanout, which differs from this physical panel path.

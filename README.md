@@ -19,7 +19,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-Research status: subsystem bring-up is the current focus. Onboard audio, the tested USB mouse path and battery/charger reporting are working. Further Wi-Fi development is paused.
+Research status: Xe3 graphics bring-up is the current focus. The separate xe core loads, and bounded metadata and PCI bus checks passed through stage 3. GPU firmware initialization and acceleration remain untested. Onboard audio, the tested USB mouse path and battery/charger reporting remain available.
 
 | Component                       | Status                  | Notes                                                                                                                                                                                                                   |
 | ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ Research status: subsystem bring-up is the current focus. Onboard audio, the tes
 | macOS installation              | Working                 | Sequoia 15.8.3 installed offline to a dedicated internal APFS partition                                                                                                                                                 |
 | Installed desktop               | Working                 | Setup completed, desktop and System Settings reached                                                                                                                                                                    |
 | CPU compatibility               | Partial                 | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU                                                                                                                                                 |
-| Integrated graphics/display     | Partial                 | Basic display output works without Xe3/Metal acceleration                                                                                                                                                               |
+| Integrated graphics/display     | Partial                 | Basic display output works. The xe core loads and stages 1-3 pass without display takeover. Xe3/Metal acceleration remains untested.                                                                                                                                                               |
 | Internal keyboard               | Working                 | VoodooPS2                                                                                                                                                                                                               |
 | Touchpad                        | Working                 | Gestures, scrolling, and Trackpad settings work                                                                                                                                                                         |
 | USB controllers | Working in tested configuration | USBToolBox and an explicit map create all 12 XHCI and five TXHC ports. Connector types remain provisional, with other ports and Type-C orientation unverified. |
@@ -36,12 +36,12 @@ Research status: subsystem bring-up is the current focus. Onboard audio, the tes
 | External USB mouse | Working on tested port | Logitech M330 receiver buttons, scrolling and reconnect work on top-right XHCI HS02. Six latest reconnects reached HID startup in 0.52-0.54 s with a scoped 350 ms reset window. |
 | Native I²C touchpad             | Working                 | VoodooI2CHID and VoodooInput attach in polling mode for touch reports, appears to be reliable throughout experiments                                                                                                    |
 | Wi-Fi                           | Partial                 | The experimental BE211 driver loaded a public HTTPS page in Safari on an open 2.4 GHz network. A follow-up ran for 3–4 hours without unexpected disconnects and reconnected automatically after an overnight lid close. |
-| GPU acceleration                | Unsupported             | No functional Xe3 graphics acceleration                                                                                                                                                                                 |
+| GPU acceleration                | Not achieved            | No functional Xe3 graphics acceleration                                                                                                                                                                                 |
 | Onboard audio | Working in tested functions | ALC285 microphone, speakers, wired headphones, volume/mute and automatic jack switching work, including across restarts. Extended stability and sleep/wake remain unverified. |
 | Webcam | Enumerated | The internal webcam appears in USB and Camera inventories. Video capture has not been tested. |
 | Bluetooth | Not yet verified | Installed-system functional testing pending. |
 | Battery and charger reporting | Working in captured cold boot | SMCBatteryManager 1.3.8 publishes battery data and correctly reports AC/battery/AC transitions. Restart behavior and long-run accuracy remain unverified. |
-| Sleep/wake and CPU power management | Not yet verified | Battery publication is confirmed, while sleep, lid events and CPU power efficiency need separate testing. |
+| Sleep/wake and CPU power management | Not yet verified | Battery publication and lid events are confirmed. The boot framebuffer blocks full system sleep. CPU power efficiency remains unverified. |
 
 These statuses may be hardware specific to this configuration or potentially even to this laptop only.
 
@@ -68,6 +68,11 @@ These statuses may be hardware specific to this configuration or potentially eve
 - **Attempts 106-108:** Located slow reconnects in repeated null device-creation results. A 350 ms reset window scoped to the receiver port reduced reconnect time. All six latest trials succeeded on the first reset call, reaching HID startup in about half a second. An earlier trial still needed one retry, so broad stability is not established.
 - **Attempt 109:** Added matching SMCBatteryManager 1.3.8. macOS published battery information and correctly switched between charging, discharging and charging after charger removal/reconnection.
 
+- **Attempts 110-111:** Confirmed lid-close/open detection and identified `.Display_boot` as a system sleep preventer. Full hardware sleep/resume was not established.
+- **Attempts 112-114:** Investigated MeowXE3 injection failure, verified its graphics imports in the installed system collection and successfully loaded a separate Panther Lake xe core at idle stage 0.
+- **Attempts 115-116:** Caught two failed runtime patch applications before the collector issued a stage request. These are separate attempts, with the original capture labels preserved.
+- **Attempts 117-118:** Directly adapted the pinned core for B082 metadata-only checks, then passed stages 1-3. PCI bus setup preserved the display metadata and progressing frame counter. Firmware loading, rendering and acceleration were not tested.
+
 ### Offline installation milestone
 
 The successful installation used:
@@ -88,7 +93,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-109, including BE211 Wi-Fi, onboard audio, USB enumeration/reconnect and battery reporting.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-118, including BE211 Wi-Fi, audio, USB, battery/lid reporting and the first bounded Xe3 core tests. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
 
 ### Visual archive
 
@@ -99,9 +104,9 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 ## Research Priorities
 
 1. **(Paused) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. WPA2/WPA3 and 5 GHz support remain open work.
-2. **System stability and power:** Extend the confirmed battery/charger test across restarts, then test sleep/wake, lid behavior and CPU power efficiency.
+2. **System stability and power:** Qualify battery reporting across restarts and investigate the boot framebuffer sleep preventer and CPU power efficiency. Lid notifications already work.
 3. **USB compatibility:** Qualify additional physical ports, Type-C orientation and sleep/wake. Correct provisional connector metadata and monitor the remaining occasional reconnect retry.
-4. **GPU acceleration:** Investigate possible Panther Lake Xe3 support through experimental Intel graphics driver work.
+4. **GPU acceleration:** Review the xe stage-4 initialization path and B082 memory classification after the successful stage-3 bus and metadata tests. Firmware loading, rendering and acceleration remain unverified.
 5. **(Complete) Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
 
 ## Project Scope
@@ -126,4 +131,5 @@ Third-party code, software, and other materials retain their respective licenses
 - [yangyishuo1124 / Mubai](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs/blob/5f0de92f42b3655d6539b91fe3a630b8262096f3/HARDWARE_FOLLOWUP_2026-11-13.md) for documenting the Panther Lake audio controller compatibility-ID experiment that informed Attempt 103. That record also cites [VedCloud's Meteor Lake work](https://github.com/VedCloud/Meteor-Lake-Xe-LPG-Metal-Graphics) as an earlier `51CA` compatibility reference. I retained my Framework's ALC285 layout and verified the result on this machine.
 - [USBToolBox / Dhinak G. and contributors](https://github.com/USBToolBox/kext/tree/1.2.0) for runtime ACPI port-description bypass and map injection. The Framework map and reset-window experiment were derived from this machine's captures and exact installed kernel collection.
 - lvs1974 and DebugEnhancer contributors for the tracing foundation, and usrsse2 and VirtualSMC contributors for SMCBatteryManager.
+- [watchthelight](https://github.com/watchthelight-labs/WTLIntelGfx), [InSnh-Gd](https://github.com/InSnh-Gd/WTLIntelGfx) and [Mubai](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs) for the xe core, Panther Lake port and metadata-only diagnostics used in Attempts 114-118. [cuadra8998 / MeowXE3](https://github.com/cuadra8998/MeowXE3), [ericek111 / NullMoth Xe3 VF work](https://github.com/ericek111/vibe-nullmoth-xe3-qemu), and their upstream contributors informed the comparison research. Their reported acceleration is not presented as a Framework result.
 - [corpnewt / gibMacOS](https://github.com/corpnewt/gibMacOS), [MacKernelSDK](https://github.com/acidanthera/MacKernelSDK) and [cctools-port](https://github.com/tpoechtrager/cctools-port) for installer retrieval and build tooling. Apple and the upstream operating-system projects retain credit and rights for their software and driver sources.
