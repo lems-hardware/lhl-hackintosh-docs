@@ -19,7 +19,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-Research status: Xe3 graphics bring-up is the current focus. The separate xe core loads, and bounded metadata and PCI bus checks passed through stage 3. GPU firmware initialization and acceleration remain untested. Onboard audio, the tested USB mouse path and battery/charger reporting remain available.
+Research status: Xe3 graphics bring-up is the current focus. The separate xe core initializes both GTs, all six engines pass command completion and diagnostic memory readback, and a root userspace version query returns xe 1.1.0. Rendering and Metal remain untested. Onboard audio, the tested USB mouse path and battery/charger reporting remain available.
 
 | Component                       | Status                  | Notes                                                                                                                                                                                                                   |
 | ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ Research status: Xe3 graphics bring-up is the current focus. The separate xe cor
 | macOS installation              | Working                 | Sequoia 15.8.3 installed offline to a dedicated internal APFS partition                                                                                                                                                 |
 | Installed desktop               | Working                 | Setup completed, desktop and System Settings reached                                                                                                                                                                    |
 | CPU compatibility               | Partial                 | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU                                                                                                                                                 |
-| Integrated graphics/display     | Partial                 | Basic display output works. The xe core loads and stages 1-3 pass without display takeover. Xe3/Metal acceleration remains untested.                                                                                                                                                               |
+| Integrated graphics/display     | Partial                 | Basic display output works. The xe core passes stages 1-6 and a root userspace version query without display takeover. Xe3/Metal acceleration remains untested.                                                                                                                                                               |
 | Internal keyboard               | Working                 | VoodooPS2                                                                                                                                                                                                               |
 | Touchpad                        | Working                 | Gestures, scrolling, and Trackpad settings work                                                                                                                                                                         |
 | USB controllers | Working in tested configuration | USBToolBox and an explicit map create all 12 XHCI and five TXHC ports. Connector types remain provisional, with other ports and Type-C orientation unverified. |
@@ -72,6 +72,7 @@ These statuses may be hardware specific to this configuration or potentially eve
 - **Attempts 112-114:** Investigated MeowXE3 injection failure, verified its graphics imports in the installed system collection and successfully loaded a separate Panther Lake xe core at idle stage 0.
 - **Attempts 115-116:** Caught two failed runtime patch applications before the collector issued a stage request. These are separate attempts, with the original capture labels preserved.
 - **Attempts 117-118:** Directly adapted the pinned core for B082 metadata-only checks, then passed stages 1-3. PCI bus setup preserved the display metadata and progressing frame counter. Firmware loading, rendering and acceleration were not tested.
+- **Attempts 119-123:** Fixed a stage-4 panic caused by a sleeping DRM SRCU reader using ordinary RCU. Both GTs initialized, six engines passed command completion and GPU memory readback, and a userspace process queried xe 1.1.0 successfully. Rendering and Metal remain untested.
 
 ### Offline installation milestone
 
@@ -93,7 +94,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-118, including BE211 Wi-Fi, audio, USB, battery/lid reporting and the first bounded Xe3 core tests. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-123, including BE211 Wi-Fi, audio, USB, battery/lid reporting and the first bounded Xe3 core tests. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
 
 ### Visual archive
 
@@ -131,5 +132,5 @@ Third-party code, software, and other materials retain their respective licenses
 - [yangyishuo1124 / Mubai](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs/blob/5f0de92f42b3655d6539b91fe3a630b8262096f3/HARDWARE_FOLLOWUP_2026-11-13.md) for documenting the Panther Lake audio controller compatibility-ID experiment that informed Attempt 103. That record also cites [VedCloud's Meteor Lake work](https://github.com/VedCloud/Meteor-Lake-Xe-LPG-Metal-Graphics) as an earlier `51CA` compatibility reference. I retained my Framework's ALC285 layout and verified the result on this machine.
 - [USBToolBox / Dhinak G. and contributors](https://github.com/USBToolBox/kext/tree/1.2.0) for runtime ACPI port-description bypass and map injection. The Framework map and reset-window experiment were derived from this machine's captures and exact installed kernel collection.
 - lvs1974 and DebugEnhancer contributors for the tracing foundation, and usrsse2 and VirtualSMC contributors for SMCBatteryManager.
-- [watchthelight](https://github.com/watchthelight-labs/WTLIntelGfx), [InSnh-Gd](https://github.com/InSnh-Gd/WTLIntelGfx) and [Mubai](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs) for the xe core, Panther Lake port and metadata-only diagnostics used in Attempts 114-118. [cuadra8998 / MeowXE3](https://github.com/cuadra8998/MeowXE3), [ericek111 / NullMoth Xe3 VF work](https://github.com/ericek111/vibe-nullmoth-xe3-qemu), and their upstream contributors informed the comparison research. Their reported acceleration is not presented as a Framework result.
+- [watchthelight](https://github.com/watchthelight-labs/WTLIntelGfx), [InSnh-Gd](https://github.com/InSnh-Gd/WTLIntelGfx) and [Mubai](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs) for the xe core, Panther Lake port and metadata-only diagnostics used in Attempts 114-123. [cuadra8998 / MeowXE3](https://github.com/cuadra8998/MeowXE3), [ericek111 / NullMoth Xe3 VF work](https://github.com/ericek111/vibe-nullmoth-xe3-qemu), and their upstream contributors informed the comparison research. Their reported acceleration is not presented as a Framework result.
 - [corpnewt / gibMacOS](https://github.com/corpnewt/gibMacOS), [MacKernelSDK](https://github.com/acidanthera/MacKernelSDK) and [cctools-port](https://github.com/tpoechtrager/cctools-port) for installer retrieval and build tooling. Apple and the upstream operating-system projects retain credit and rights for their software and driver sources.

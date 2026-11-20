@@ -60,3 +60,15 @@ Attempts 115 and 116 retain their original as-tested packages and capture filena
 ## Credits
 
 The core and diagnostic groundwork belongs to watchthelight, InSnh-Gd, Mubai and upstream contributors. [MeowXE3](https://github.com/cuadra8998/MeowXE3) and [ericek111's virtualized Xe3 work](https://github.com/ericek111/vibe-nullmoth-xe3-qemu) informed comparison research. Their different hardware and deployment results are not transferred to this Framework. See the [full credits](../TECHNICAL-FINDINGS.md#credits-and-references).
+
+## Graphics follow-up through Attempt 123
+
+I initialized both Xe3 GTs with GuC 70.72.1 after fixing a scoped SRCU compatibility mismatch. All six engines then completed empty batches and produced matching GPU memory writes and CPU readbacks. A root macOS process opened the render node, queried xe 1.1.0 and closed cleanly. The existing display and input remained usable in these captures. Userspace GPU allocation, mapping, command submission, rendering, Vulkan, Metal and extended graphics stability remain unverified.
+
+Attempt 119 panicked in queue/LRC cleanup when a GGTT invalidation waited on a fence with preemption disabled. Exact-binary analysis identified the DRM unplug SRCU reader alias to ordinary RCU. Attempt 120 kept the same core and routed only that domain through sleepable readers and serialized grace periods. Initialization then completed. This supports the diagnosis without qualifying every SRCU or hot-unplug path.
+
+Attempt 121 completed empty batches on six engines with zero errors and 48 interrupts. Attempt 122 verified six distinct GPU-written values with matching CPU readbacks, zero errors and 49 store-test interrupts. Attempt 123 repeated stages 1-6, then opened /dev/dri/renderD128 and completed DRM_IOCTL_VERSION and close with zero errors. It ran as root. The initial missing-helper capture stopped at stage 0 and is not a driver failure. The follow-up found IOAcceleratorFamily2 485.2 and IOGraphicsFamily 599, with no active accelerator entries in the queried classes.
+
+Stage 7 remains blocked. Its claim property alone would not establish acceleration. The test writes targeted diagnostic buffers, while panel-framebuffer CPU access remained blocked. The final display metadata in Attempt 123 was the saved stage-6 result, not a new physical resampling after the version query. No shader, rendered image, ANV/Vulkan or Metal result is claimed.
+
+The xe core and port credit remains with watchthelight, InSnh-Gd, Mubai, Linux/Intel xe and FreeBSD LinuxKPI. The local SRCU compatibility route uses the Acidanthera/Lilu and DebugEnhancer foundations. Raw captures, Apple kernel collections and machine-specific registry data remain private.
