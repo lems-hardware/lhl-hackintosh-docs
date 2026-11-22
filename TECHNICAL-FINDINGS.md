@@ -1,6 +1,6 @@
 # Framework Laptop 13 Pro macOS Sequoia technical findings
 
-**Coverage:** Boot attempts 1-129, through November 20, 2026\
+**Coverage:** Boot attempts 1-138, through November 21, 2026\
 **Platform:** Framework Laptop 13 Pro, Intel Panther Lake  
 **Evidence:** [Boot attempt journal](logs/fw13p-attempts-sequoia.md) and [visual archive](logs/fw13p-visual-sequoia/)
 
@@ -270,13 +270,23 @@ OpenCore reported IOAcceleratorFamily2 and IOGraphicsFamily missing from BootKC,
 
 The next graphics integration boundary is a supported dependency/loading route before the accelerator can attach. Exact disassembly shows that stage 7 publishes a claim and reruns matching, which alone would not prove rendering. Ordinary-user and sandbox access, shaders, Vulkan, Metal, accelerated WindowServer, native display takeover and extended graphics stability remain unverified.
 
+### Attempts 130-138 - Standalone SRCU and accelerator collection building
+
+I separated the DRM SRCU compatibility route into XeGfxSRCUFix 0.1.0. With the working stage-6 core, Attempt 130 repeated all six engine completions and GPU stores, and verified the private userspace store of 0x1280cafe with intact guards and successful cleanup.
+
+Attempts 131-132 failed collection building before a candidate was produced. Attempt 133 identified invalid FAT32 ownership on both accelerator and control bundles. Attempt 134 stopped at an invalid disk-image option. Attempt 135 corrected it using a temporary HFS+ image, verified root ownership and strict signing checks, but both bundles still failed the separate authentication diagnostic. This did not establish corrupted Apple collections or an accelerator-specific ABI fault.
+
+Attempt 136 successfully built and inspected an uninstalled auxiliary collection containing XeGfxAccel 0.9. I verified the exact installed BootKC and SystemKC linkage in Attempt 137 and saved a verified copy of the original auxiliary collection. Attempt 138 built a new candidate containing AppleMobileDevice 4.0, HighPointIOP 4.4.5, HighPointRR 4.22.1, my original Stage 2 XeGfx 0.0.48 probe and XeGfxAccel 0.9. All expected executable UUIDs matched. Original source and installed collection hashes remained unchanged.
+
+This establishes collection building and membership, not runtime loading or equivalent boot behavior. The next experiment will require a verified rollback route. Stage 7, accelerator attachment, rendering and Metal remain untested.
+
 ## 9. Current status and evidence limits
 
 | Area                     | Verified outcome                                                                                                                                                                  | Open question                                                                                                                                                                                                      |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Boot and CPU             | Recovery, Terminal and the installed desktop boot via OpenCore with CPUID emulation, classic firmware LAPIC entries and the Darwin CPU SSDT.                                      | Long-run stability and native CPU power management.                                                                                                                                                                |
 | Storage and installation | Internal NVMe initialization, an offline APFS installation and a bootable installed desktop.                                                                                      | Broader external device support and installation reproducibility across configurations.                                                                                                                            |
-| Display and GPU | Firmware desktop retained, both GTs initialized, six-engine checks passed and a root userspace queue produced verified GPU-written data with cleanup. | Accelerator dependency/loading route, stage-7 attachment, shaders, Vulkan, Metal, native display takeover and extended stability. |
+| Display and GPU | Firmware desktop retained, both GTs initialized, six-engine checks passed and a root userspace queue produced verified GPU-written data with cleanup. | Runtime loading of the built candidate, stage-7 attachment, shaders, Vulkan, Metal, native display takeover and extended stability. |
 | Keyboard                 | Functional built-in PS/2 input. Skipping the PS/2 boot reset improved captured startup behavior.                                                                                  | Reliability across all restart paths.                                                                                                                                                                              |
 | Touchpad                 | Native PIXA3854 input with gestures and settings.                                                                                                                                 | Long-run stability, sleep/wake and continued coexistence with PS/2 fallback.                                                                                                                                       |
 | External USB             | All 17 mapped ports publish, the tested Logitech mouse works, and the SD reader remains accessible at 5 Gb/s. Six latest same-port reconnects reached HID startup in 0.52-0.54 s. | Provisional connector types, other ports/orientations, occasional reset retry and sleep/wake.                                                                                                                      |

@@ -1,4 +1,4 @@
-# Graphics evidence through Attempt 129, November 19-20, 2026
+# Graphics evidence through Attempt 138, November 19-21, 2026
 
 I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequoia 15.8.3 24H241, Darwin 24.6.0 and OpenCore DEBUG 1.0.8. Graphics, media and display IP are 30.00. The existing display is a 2880 x 1920 firmware framebuffer with a 22118400-byte allocation. The following results do not establish acceleration.
 
@@ -26,6 +26,14 @@ I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequ
 | 127 | One empty userspace render batch completed, queue stayed unbanned and cleanup passed. | Completion signaling, no checked GPU data effect. |
 | 128 | Private GPU store read back 0x1280cafe with both guards and batch words intact, queue health and cleanup passed. | Immediate store, no shader or rendering test. |
 | 129 | Sequoia accelerator injection failed during vtable patching after missing BootKC graphics dependencies. Collector stopped at stage 0, I reported all working. | No initialization or stage-7 request in this run. Accelerator start was not reached. |
+| 130 | Standalone SRCU fix, stages 1-6 and private GPU store passed. | One exact core profile tested. |
+| 131-132 | Uninstalled build refused, exit 31. | No candidate produced. |
+| 133 | Both diagnostic bundles failed FAT32 ownership and authentication. | Shared rejection, not an accelerator-specific diagnosis. |
+| 134 | Invalid disk-image type stopped capture. | No diagnostic run. |
+| 135 | Root-owned HFS+ image worked, authentication diagnostics still failed. | Ownership resolved, linking untested. |
+| 136 | Uninstalled accelerator collection built and inspected. | No runtime load. |
+| 137 | Collection linkage matches, original auxiliary copy verified. | Four existing entries identified. |
+| 138 | Five-entry auxiliary candidate built and inspected, expected UUIDs retained. | No installation or attachment. |
 
 I reported everything working after Attempt 117 and everything operational after Attempt 118. Both finished with running 0 and an empty environment. These are individual captured runs, not extended stability qualification. No installed graphics driver, kernel cache or internal boot configuration was modified by these EFI experiments. The older installed WTL 0.0.48 copy was not removed. Attempts 117-118 show it refused because the selected 0.0.47 build was already loaded.
 
@@ -82,6 +90,15 @@ Raw archives, Apple kernel collections, reconstructed analysis binaries, serial 
 | 127 | `attempt-127-20261120-142616-680.tgz` | `6407112aa9c4713f84734545782f445e6750ea535bae3759668b5d3453bd82bd` |
 | 128 | `attempt-128-20261120-144626-670.tgz` | `da0d8e3e3d7f73ff29f0282ad4a8637ec27b2a328b6ca8bdecd2288ea96ffed8` |
 | 129 | `attempt-129-20261120-151303-679.tgz` | `974b9c669790f0b5a6bb6f428609dcd1de1f2d34f17a645ce7e9595c04fdb407` |
+| 130 | `attempt-130-20261120-213522-989.tgz` | `1291f84716b5f11fbcecb8c89151e91b5af92c41f7ee749757d39c12e3f31e49` |
+| 131 | `attempt-131-20261120-220224-656.tgz` | `aca15246460e7eb4a8fdbb1b1631e176090e4703461be2bd8548448a8d3b6e30` |
+| 132 | `attempt-132-20261121-123226-663.tgz` | `6f688f075f525b827398c40bc069e722c1f4b6a6d877209eb06d3248a3b590bb` |
+| 133 | `attempt-133-20261121-141217-659.tgz` | `f69b5a43569a10479526233f112b6e84bf0f08ff918e4510fa5b17e9734412ab` |
+| 134 | `attempt-134-20261121-142830-681.tgz` | `2be4b5751c84636968443bf57b061750847b3aaa71d961c9313d2dbb4cd6b669` |
+| 135 | `attempt-135-20261121-144421-644.tgz` | `bd23756c1ca2c652e2f5131b9821f0f9709208a475249e1b9b38599ac96e2952` |
+| 136 | `attempt-136-20261121-145740-686.tgz` | `0aeb726e17be76d0671b0c62aaf84187cd898f0805c51a1fecf510a7c4b7a6df` |
+| 137 | `attempt-137-20261121-151020-678.tgz` | `d23e6379f8e53ac3b7843ba8445a5e088c95d363fc201f318a52d6e1d64d8bae` |
+| 138 | `attempt-138-20261121-154101-653.tgz` | `2070c02058dcab4ba3e60f8cf66513d8cde67f383bc18fc17aae9aee3ac7ecb2` |
 
 Attempts 115 and 116 retain their original as-tested packages and capture filenames. Renumbering did not rewrite source evidence. Attempts 117 and 118 each passed matching OpenCore 1.0.8 validation, all 71 staged EFI hashes, file-reference checks and ZIP integrity checks. The loaded UUID establishes the selected core variant at runtime, while it is not an independent hash verification of every mounted EFI file.
 
@@ -98,6 +115,12 @@ Attempts 124-128 then established a 65536-byte WB buffer CPU roundtrip, VM/synco
 Attempt 129's source-built accelerator has SHA-256 445ac1eab9f471bb74c062b1411e83cd049a5f4e7b01894653cfdeae4d34ca6d and UUID D63BCE8E-236F-3178-BB25-D30D3502B8A1. It was built for a macOS 15.0 compile target without NM_TAHOE, with corrected named enums and no scheduled NVIDIA temperature reader on Intel. It was not loaded. OpenCore could not access the real graphics-family superclasses during early prelinking and rejected accelerator vtable patching with Invalid Parameter. The exact failed vtable is not identified. The core and SRCU route loaded, but the collector stopped at stage 0 with all results zero. Empty accelerator registry captures and the saved loaded-driver inventory corroborate the refusal. I reported all working.
 
 Stage 7 remains untested because injection failed before initialization or claim. Its claim property is not an acceleration test. Ordinary-user and sandbox access, shaders, Vulkan, Metal, accelerator attachment and native display takeover remain unverified. The [technical findings](../TECHNICAL-FINDINGS.md#8-display-power-and-xe3-core-bring-up) explain the progression, and the [attempt journal](fw13p-attempts-sequoia.md) retains my observations and the initial missing-helper refusal.
+
+## Standalone SRCU and collection build evidence
+
+The standalone SRCU plugin preserved the verified GPU command path in Attempt 130. Attempts 131-135 isolated collection input selection, FAT32 ownership and diagnostic authentication failures. Attempts 136 and 138 successfully built uninstalled auxiliary collections against the exact installed BootKC and SystemKC, with Attempt 138 retaining all four existing entries plus XeGfxAccel 0.9. Attempt 137 preserved a verified copy of the original collection and confirmed matching dependency UUIDs. The installed collections remained unchanged. Runtime loading, stage-7 attachment, rendering and Metal remain unverified.
+
+Attempt 130 loaded XeGfxSRCUFix UUID `478F6C94-E3F8-3280-9178-52D5822A10B6`. The Attempt 136 candidate SHA-256 is `5a0c8f980d41274ba206d1f9bc4c204e214f6806f18996527faabb46ea7b3ae6`. Attempt 138 candidate SHA-256 is `f8b0a6ff9a393c3d979238526563580964cb53462a23cfa675334afeefc1bfdf`. Both builds were uninstalled. Raw collection files and capture archives remain private.
 
 ## Credits
 

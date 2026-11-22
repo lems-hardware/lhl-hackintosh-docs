@@ -19,7 +19,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-Research status: Xe3 graphics bring-up is the current focus. The separate xe core initializes both GTs, all six engines pass command completion and diagnostic memory readback, and root userspace allocation, mapping, VM binding and command submission now produce verified GPU-written data. The first Sequoia accelerator candidate failed early OpenCore vtable patching, so stage-7 attachment was not tested. Rendering and Metal remain untested. Onboard audio, the tested USB mouse path and battery/charger reporting remain available.
+Research status: Xe3 graphics bring-up is the current focus. The separate xe core initializes both GTs, all six engines pass command completion and diagnostic memory readback, and root userspace allocation, mapping, VM binding and command submission now produce verified GPU-written data. The first accelerator injection failed during OpenCore vtable patching. An uninstalled auxiliary collection now builds successfully with the accelerator and all four existing entries preserved. Runtime loading, stage-7 attachment, rendering and Metal remain untested. Onboard audio, the tested USB mouse path and battery/charger reporting remain available.
 
 | Component                       | Status                  | Notes                                                                                                                                                                                                                   |
 | ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ Research status: Xe3 graphics bring-up is the current focus. The separate xe cor
 | macOS installation              | Working                 | Sequoia 15.8.3 installed offline to a dedicated internal APFS partition                                                                                                                                                 |
 | Installed desktop               | Working                 | Setup completed, desktop and System Settings reached                                                                                                                                                                    |
 | CPU compatibility               | Partial                 | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU                                                                                                                                                 |
-| Integrated graphics/display     | Partial                 | Basic display output works. The xe core passes stages 1-6 and a private userspace GPU store/readback. Accelerator injection failed before stage 7. Xe3/Metal acceleration remains untested.                                                                                                                                                               |
+| Integrated graphics/display     | Partial                 | Basic display output works. The xe core passes stages 1-6 and a private userspace GPU store/readback. An uninstalled accelerator collection builds and passes inspection. Runtime attachment and Metal remain untested.                                                                                                                                                               |
 | Internal keyboard               | Working                 | VoodooPS2                                                                                                                                                                                                               |
 | Touchpad                        | Working                 | Gestures, scrolling, and Trackpad settings work                                                                                                                                                                         |
 | USB controllers | Working in tested configuration | USBToolBox and an explicit map create all 12 XHCI and five TXHC ports. Connector types remain provisional, with other ports and Type-C orientation unverified. |
@@ -77,6 +77,10 @@ These statuses may be hardware specific to this configuration or potentially eve
 - **Attempt 123:** Queried xe 1.1.0 from a root macOS process through the render node and closed it successfully.
 - **Attempts 124-128:** Verified userspace buffer allocation, CPU mapping, VM/syncobj lifecycle, bind/unbind completion and render-queue submission. The final private GPU store read back exactly 0x1280cafe with intact guards and successful cleanup.
 - **Attempt 129:** Built a Sequoia accelerator candidate, but OpenCore rejected it during vtable patching after both graphics dependencies were missing from BootKC. The collector stopped at stage 0 and I reported all working. Stage 7 was not requested.
+- **Attempt 130:** Standalone SRCU fix passed stages 1-6 and the private userspace GPU store again.
+- **Attempts 131-135:** Isolated collection input selection and filesystem ownership, with diagnostic authentication still unresolved.
+- **Attempts 136-138:** Built and inspected an uninstalled accelerator collection, verified its linkage and retained all four existing auxiliary entries. No installed collection changed.
+
 
 ### Offline installation milestone
 
@@ -98,7 +102,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-129, including BE211 Wi-Fi, audio, USB, battery/lid reporting and Xe3 initialization, engine completion, memory readback, userspace GPU execution/readback and the accelerator loading blocker. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-138, including BE211 Wi-Fi, audio, USB, battery/lid reporting and Xe3 initialization, engine completion, memory readback, userspace GPU execution/readback and the accelerator loading investigation. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
 
 ### Visual archive
 
@@ -111,7 +115,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 1. **(Paused) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. WPA2/WPA3 and 5 GHz support remain open work.
 2. **System stability and power:** Qualify battery reporting across restarts and investigate the boot framebuffer sleep preventer and CPU power efficiency. Lid notifications already work.
 3. **USB compatibility:** Qualify additional physical ports, Type-C orientation and sleep/wake. Correct provisional connector metadata and monitor the remaining occasional reconnect retry.
-4. **GPU acceleration (current focus):** Resolve the accelerator graphics-dependency and vtable failure during early injection. Userspace GPU store/readback works, while accelerator attachment and the matching userland stack remain prerequisites for rendering or Metal tests.
+4. **GPU acceleration (current focus):** Qualify runtime loading of the successfully built accelerator collection and verify attachment. Userspace GPU store/readback works, while accelerator attachment and the matching userland stack remain prerequisites for rendering or Metal tests.
 5. **(Complete) Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
 
 ## Project Scope
