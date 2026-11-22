@@ -1,4 +1,4 @@
-# Graphics evidence through Attempt 138, November 19-21, 2026
+# Graphics evidence through Attempt 143, November 19-22, 2026
 
 I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequoia 15.8.3 24H241, Darwin 24.6.0 and OpenCore DEBUG 1.0.8. Graphics, media and display IP are 30.00. The existing display is a 2880 x 1920 firmware framebuffer with a 22118400-byte allocation. The following results do not establish acceleration.
 
@@ -34,6 +34,11 @@ I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequ
 | 136 | Uninstalled accelerator collection built and inspected. | No runtime load. |
 | 137 | Collection linkage matches, original auxiliary copy verified. | Four existing entries identified. |
 | 138 | Five-entry auxiliary candidate built and inspected, expected UUIDs retained. | No installation or attachment. |
+| 139 | Candidate accepted at boot, exact accelerator UUID enumerated. Start-only returned code 71. | No accelerator loaded, stage 0 idle. |
+| 140 | Original collection restored and missing recorded bundle path identified. | No load requested. |
+| 141 | Explicit bundle and collection discovery both succeed. | Read-only image, installed hashes unchanged. |
+| 142 | Two normal-repository runs reached approval prompt. | Rebuild refused pending approval, cleanup verified. |
+| 143 | Approval generated accelerator collection, reboot required. | After removal original membership regenerated, new hash. Runtime startup untested. |
 
 I reported everything working after Attempt 117 and everything operational after Attempt 118. Both finished with running 0 and an empty environment. These are individual captured runs, not extended stability qualification. No installed graphics driver, kernel cache or internal boot configuration was modified by these EFI experiments. The older installed WTL 0.0.48 copy was not removed. Attempts 117-118 show it refused because the selected 0.0.47 build was already loaded.
 
@@ -99,6 +104,12 @@ Raw archives, Apple kernel collections, reconstructed analysis binaries, serial 
 | 136 | `attempt-136-20261121-145740-686.tgz` | `0aeb726e17be76d0671b0c62aaf84187cd898f0805c51a1fecf510a7c4b7a6df` |
 | 137 | `attempt-137-20261121-151020-678.tgz` | `d23e6379f8e53ac3b7843ba8445a5e088c95d363fc201f318a52d6e1d64d8bae` |
 | 138 | `attempt-138-20261121-154101-653.tgz` | `2070c02058dcab4ba3e60f8cf66513d8cde67f383bc18fc17aae9aee3ac7ecb2` |
+| 139 | `attempt-139-20261121-224353-667.tgz` | `255ffe020651cdbd34ccb9668f230aeebc3f2b133f04f4f7244a4c0f0bc8136a` |
+| 140 | `attempt-140-20261121-225806-689.tgz` | `72e802cc4343fe8506985553eb7ca8be7f5fde48dbd6dae503464cc9062f6a4c` |
+| 141 | `attempt-141-20261121-231631-665.tgz` | `3659cff1b68924ee33e206d9e357d15149d12ae0390ab2150c25a968ea0a07c7` |
+| 142 | `attempt-142-20261121-233126-662.tgz` | `7a25aebf230e1d3075a6fda27d5388b910c6e1b9802746401786b80caa0c4dcb` |
+| 142 | `attempt-142-20261121-233222-855.tgz` | `90f9b8a97f9a63ef7e03353c22f05bc42f9fbe42ca346ccfe17f73dbed32914f` |
+| 143 | `attempt-143-20261121-235858-681.tgz` | `54e05e32839a1a1fbbdce3ea203b78257e6f3dccd48d6f9a0962854dffb7bd08` |
 
 Attempts 115 and 116 retain their original as-tested packages and capture filenames. Renumbering did not rewrite source evidence. Attempts 117 and 118 each passed matching OpenCore 1.0.8 validation, all 71 staged EFI hashes, file-reference checks and ZIP integrity checks. The loaded UUID establishes the selected core variant at runtime, while it is not an independent hash verification of every mounted EFI file.
 
@@ -121,6 +132,15 @@ Stage 7 remains untested because injection failed before initialization or claim
 The standalone SRCU plugin preserved the verified GPU command path in Attempt 130. Attempts 131-135 isolated collection input selection, FAT32 ownership and diagnostic authentication failures. Attempts 136 and 138 successfully built uninstalled auxiliary collections against the exact installed BootKC and SystemKC, with Attempt 138 retaining all four existing entries plus XeGfxAccel 0.9. Attempt 137 preserved a verified copy of the original collection and confirmed matching dependency UUIDs. The installed collections remained unchanged. Runtime loading, stage-7 attachment, rendering and Metal remain unverified.
 
 Attempt 130 loaded XeGfxSRCUFix UUID `478F6C94-E3F8-3280-9178-52D5822A10B6`. The Attempt 136 candidate SHA-256 is `5a0c8f980d41274ba206d1f9bc4c204e214f6806f18996527faabb46ea7b3ae6`. Attempt 138 candidate SHA-256 is `f8b0a6ff9a393c3d979238526563580964cb53462a23cfa675334afeefc1bfdf`. Both builds were uninstalled. Raw collection files and capture archives remain private.
+
+## Runtime loader and approval evidence
+
+Attempt 139 booted the Attempt 138 candidate and enumerated the accelerator UUID, but the start-only request returned 71. Attempt 140 confirmed original restoration and identified the missing bundle at the temporary build path. Attempt 141 showed that both the exact bundle and the linked entry were discoverable in explicit repository inspection. No startup was established.
+
+Attempt 142 reproduced the normal approval prompt in two runs. The manager refused an automatic library rebuild pending user approval. Normal lookup found the experimental bundle, and both runs removed it and preserved the original collection hashes. Attempt 143 advanced to a system-generated collection UUID `CD497DA6-0EC5-D224-CD66-90579A5797F0`, SHA-256 `fc14f094735e82ba01778f2e2b8aca7f3d791f62c953c38f84bb2c03a7d3f0fc`, containing the expected accelerator UUID and three legacy entries. The daemon reported that a reboot was required. Separate diagnostic authentication errors persisted. The accelerator was never in the loaded inventory. Stage 0 remained idle.
+
+After removal of the temporary bundle, the user-provided inventory showed a regenerated auxiliary collection UUID `5F92863E-7A74-89F9-95BC-3A030E33C5B7`, SHA-256 `adaf398a69e8f9c8c5bf3c51de58f3f8adf207cf7bc413aeb630096aba76eb52`. It contains all four original entries and the original executable UUIDs, with no accelerator. This confirms restored membership, not original byte identity or full linkage qualification of the new baseline. Recovery rollback copy and rename checks passed. Raw collections and approval logs remain private.
+
 
 ## Credits
 

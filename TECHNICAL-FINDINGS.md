@@ -1,6 +1,6 @@
 # Framework Laptop 13 Pro macOS Sequoia technical findings
 
-**Coverage:** Boot attempts 1-138, through November 21, 2026\
+**Coverage:** Boot attempts 1-143, through November 22, 2026\
 **Platform:** Framework Laptop 13 Pro, Intel Panther Lake  
 **Evidence:** [Boot attempt journal](logs/fw13p-attempts-sequoia.md) and [visual archive](logs/fw13p-visual-sequoia/)
 
@@ -280,13 +280,25 @@ Attempt 136 successfully built and inspected an uninstalled auxiliary collection
 
 This establishes collection building and membership, not runtime loading or equivalent boot behavior. The next experiment will require a verified rollback route. Stage 7, accelerator attachment, rendering and Metal remain untested.
 
+### Attempts 139-143 - Boot acceptance, bundle discovery and normal approval
+
+I verified the original auxiliary collection backup from built-in Sequoia 15.8.3 Recovery, including a temporary copy and rename with matching root ownership, permissions and SHA256. Recovery ran the same functioning features as my regular installation during those checks. I did not qualify each subsystem individually.
+
+In Attempt 139, macOS booted with the five-entry candidate and listed the expected accelerator UUID in the kernel auxiliary inventory, but the start-only identifier request returned code 71. Attempt 140 verified restoration of the original collection and identified a missing bundle at the temporary build repository path in the prior management log. Attempt 141 found the bundle and collection entry by explicit read-only repository inspection.
+
+In both Attempt 142 runs, the ordinary installed repository lookup found XeGfxAccel. macOS displayed an extension approval prompt and its management logs reported a rebuild refusal pending user approval. The diagnostic signature errors persisted. Both runs removed the temporary bundle and preserved all original collection hashes.
+
+Attempt 143 advanced through normal approval to a reboot-required collection generation. The generated collection included XeGfxAccel 0.9, HighPointIOP, HighPointRR and AppleMobileDevice, but omitted the old installed XeGfx 0.0.48. The running EFI core remained 0.0.47, and the accelerator service never loaded. After bundle removal macOS generated another collection containing all four original entries and their original executable UUIDs, without XeGfxAccel. The regenerated hash differs from the earlier backup. Original membership is restored, not byte-for-byte identity. Full linkage qualification of the new baseline remains pending. BootKC and SystemKC matched their original hashes in the captured run.
+
+The ordinary approval route can generate an accelerator-containing collection, but runtime start, stage 7, attachment, rendering and Metal remain unverified. The signature diagnostic errors remain unresolved. A standalone Vulkan path is also worth investigating independently of accelerator attachment.
+
 ## 9. Current status and evidence limits
 
 | Area                     | Verified outcome                                                                                                                                                                  | Open question                                                                                                                                                                                                      |
 | ------------------------ | --------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------ |
 | Boot and CPU             | Recovery, Terminal and the installed desktop boot via OpenCore with CPUID emulation, classic firmware LAPIC entries and the Darwin CPU SSDT.                                      | Long-run stability and native CPU power management.                                                                                                                                                                |
 | Storage and installation | Internal NVMe initialization, an offline APFS installation and a bootable installed desktop.                                                                                      | Broader external device support and installation reproducibility across configurations.                                                                                                                            |
-| Display and GPU | Firmware desktop retained, both GTs initialized, six-engine checks passed and a root userspace queue produced verified GPU-written data with cleanup. | Runtime loading of the built candidate, stage-7 attachment, shaders, Vulkan, Metal, native display takeover and extended stability. |
+| Display and GPU | Firmware desktop retained, both GTs initialized, six-engine checks passed and a root userspace queue produced verified GPU-written data with cleanup. | Module startup after normal approval-driven collection generation, stage-7 attachment, shaders, Vulkan, Metal, native display takeover and extended stability. |
 | Keyboard                 | Functional built-in PS/2 input. Skipping the PS/2 boot reset improved captured startup behavior.                                                                                  | Reliability across all restart paths.                                                                                                                                                                              |
 | Touchpad                 | Native PIXA3854 input with gestures and settings.                                                                                                                                 | Long-run stability, sleep/wake and continued coexistence with PS/2 fallback.                                                                                                                                       |
 | External USB             | All 17 mapped ports publish, the tested Logitech mouse works, and the SD reader remains accessible at 5 Gb/s. Six latest same-port reconnects reached HID startup in 0.52-0.54 s. | Provisional connector types, other ports/orientations, occasional reset retry and sleep/wake.                                                                                                                      |
