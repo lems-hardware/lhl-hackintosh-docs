@@ -19,7 +19,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-Research status: Xe3 graphics bring-up is the current focus. Normal macOS approval and an explicit module start now load the accelerator, and manual stage 7 attaches NMXAccel on the B390. Privately staged Intel Vulkan libraries enumerate the GPU, create a device and queue, complete a checked buffer fill and run an application compute shader. Attempt 154 rendered a 64x64 checkerboard with vertex and fragment shaders, with all 4096 pixels verified through readback. Metal, presentation and an accelerated desktop remain unverified. Onboard audio, the tested USB mouse path and battery/charger reporting remain available.
+Research status: Private Metal compute, offscreen rendering and IOSurface host-memory import now pass checked workloads on the B390. Direct presentation, accelerated WindowServer and broader graphics stability remain unverified.
 
 | Component                       | Status                  | Notes                                                                                                                                                                                                                   |
 | ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ Research status: Xe3 graphics bring-up is the current focus. Normal macOS approv
 | macOS installation              | Working                 | Sequoia 15.8.3 installed offline to a dedicated internal APFS partition                                                                                                                                                 |
 | Installed desktop               | Working                 | Setup completed, desktop and System Settings reached                                                                                                                                                                    |
 | CPU compatibility               | Partial                 | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU                                                                                                                                                 |
-| Integrated graphics/display | Partial | Basic display output remains in use. Accelerator startup and stage-7 attachment work in captured runs. Private Vulkan compute and offscreen rendering pass, while Metal and native display takeover remain untested. |
+| Integrated graphics/display | Partial | Basic display output remains in use. Accelerator startup and stage-7 attachment work in captured runs. Private Vulkan and Metal compute/rendering pass. IOSurface host import and final cleanup are verified for a bounded workload. Native display takeover remains untested. |
 | Internal keyboard               | Working                 | VoodooPS2                                                                                                                                                                                                               |
 | Touchpad                        | Working                 | Gestures, scrolling, and Trackpad settings work                                                                                                                                                                         |
 | USB controllers | Working in tested configuration | USBToolBox and an explicit map create all 12 XHCI and five TXHC ports. Connector types remain provisional, with other ports and Type-C orientation unverified. |
@@ -36,7 +36,7 @@ Research status: Xe3 graphics bring-up is the current focus. Normal macOS approv
 | External USB mouse | Working on tested port | Logitech M330 receiver buttons, scrolling and reconnect work on top-right XHCI HS02. Six latest reconnects reached HID startup in 0.52-0.54 s with a scoped 350 ms reset window. |
 | Native I²C touchpad             | Working                 | VoodooI2CHID and VoodooInput attach in polling mode for touch reports, appears to be reliable throughout experiments                                                                                                    |
 | Wi-Fi                           | Partial                 | The experimental BE211 driver loaded a public HTTPS page in Safari on an open 2.4 GHz network. A follow-up ran for 3–4 hours without unexpected disconnects and reconnected automatically after an overnight lid close. |
-| GPU acceleration | Experimental, offscreen Vulkan verified | Transfer, compute and a small vertex/fragment graphics pipeline produce checked GPU output. No accelerated desktop, presentation or Metal demonstrated. |
+| GPU acceleration | Experimental, private Vulkan and Metal verified | Checked transfer, compute and offscreen graphics output through both private APIs. IOSurface host import works in the tested path. No direct presentation or accelerated desktop demonstrated. |
 | Onboard audio | Working in tested functions | ALC285 microphone, speakers, wired headphones, volume/mute and automatic jack switching work, including across restarts. Extended stability and sleep/wake remain unverified. |
 | Webcam | Enumerated | The internal webcam appears in USB and Camera inventories. Video capture has not been tested. |
 | Bluetooth | Not yet verified | Installed-system functional testing pending. |
@@ -89,6 +89,12 @@ These statuses may be hardware specific to this configuration or potentially eve
 - **Attempts 153-154:** An application compute shader produced all 1024 expected output words. A vertex/fragment graphics pipeline then rendered a 64x64 green-and-magenta checkerboard, with all 4096 RGBA pixels matching and the saved RGB image independently verified. [Captured rendering](logs/graphics-evidence.md#offscreen-rendering-artifact).
 
 
+- **Attempts 155-159:** Audited Metal compatibility, built a Sequoia-targeted plugin from pinned source and loaded it privately. Metal device creation succeeded with the B390 identity matching NMXAccel.
+- **Attempts 160-162:** Verified a Metal buffer fill, source-compiled compute shader and offscreen vertex/fragment rendering. All output values, 4096 image pixels and guards matched.
+- **Attempts 163-167:** Traced failed IOSurface host import to Xe's unsupported HMM population stub. Qualified real page wiring, SG construction, DMA mapping and cleanup against the exact deployed core.
+- **Attempt 168:** Implemented retained user-pointer mappings. Host import and rendering succeeded with exact texture and IOSurface pixels, followed by release of all four pages and an active mapping count of zero. Direct presentation and broader stability remain unverified.
+
+
 ### Offline installation milestone
 
 The successful installation used:
@@ -109,7 +115,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-154, including BE211 Wi-Fi, audio, USB, battery/lid reporting, accelerator attachment and verified Vulkan transfer, compute and offscreen graphics output. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-168, including BE211 Wi-Fi, audio, USB, battery/lid reporting, accelerator attachment, verified Vulkan and Metal workloads, and the IOSurface host-import fix. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
 
 ### Visual archive
 
@@ -122,7 +128,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 1. **(Paused) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. WPA2/WPA3 and 5 GHz support remain open work.
 2. **System stability and power:** Qualify battery reporting across restarts and investigate the boot framebuffer sleep preventer and CPU power efficiency. Lid notifications already work.
 3. **USB compatibility:** Qualify additional physical ports, Type-C orientation and sleep/wake. Correct provisional connector metadata and monitor the remaining occasional reconnect retry.
-4. **GPU acceleration (current focus):** Investigate compatible Metal integration and presentation while preserving the verified private Vulkan path. Accelerator attachment, compute and offscreen graphics work in captured runs. Native display takeover, accelerated WindowServer and broader stability remain open.
+4. **GPU acceleration (current focus):** Qualify mapping lifetime, larger surfaces and presentation while preserving the verified private Vulkan and Metal paths. Native display takeover, accelerated WindowServer and broader stability remain open.
 5. **(Complete) Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
 
 ## Project Scope
@@ -150,3 +156,4 @@ Third-party code, software, and other materials retain their respective licenses
 - [watchthelight](https://github.com/watchthelight-labs/WTLIntelGfx), [InSnh-Gd](https://github.com/InSnh-Gd/WTLIntelGfx) and [Mubai](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs) for the xe core, Panther Lake port and metadata-only diagnostics used in Attempts 114-129. NullMoth supplied the shared accelerator foundation, and [NVIDIA open-gpu-kernel-modules](https://github.com/NVIDIA/open-gpu-kernel-modules/tree/615.78.08) supplied required build headers. [cuadra8998 / MeowXE3](https://github.com/cuadra8998/MeowXE3), [ericek111 / NullMoth Xe3 VF work](https://github.com/ericek111/vibe-nullmoth-xe3-qemu), and their upstream contributors informed the comparison research. Their reported acceleration is not presented as a Framework result.
 - [corpnewt / gibMacOS](https://github.com/corpnewt/gibMacOS), [MacKernelSDK](https://github.com/acidanthera/MacKernelSDK) and [cctools-port](https://github.com/tpoechtrager/cctools-port) for installer retrieval and build tooling. Apple and the upstream operating-system projects retain credit and rights for their software and driver sources.
 - [cuadra8998 / MeowXE3 1.0.12](https://github.com/cuadra8998/MeowXE3) for the packaged Intel Vulkan ICD and libdrm used unchanged in the private userspace tests, together with the Mesa/ANV, Intel, libdrm and NullMoth port contributors. [Khronos](https://github.com/KhronosGroup) supplies the Vulkan headers, glslang and SPIR-V validation tools used by the test helpers. Those upstream projects retain their original licenses.
+- Intel's [Linux Xe HMM implementation](https://github.com/torvalds/linux/blob/v6.14/drivers/gpu/drm/xe/xe_hmm.c) and [FreeBSD LinuxKPI](https://github.com/freebsd/freebsd-src/tree/main/sys/compat/linuxkpi) for mapping-lifecycle references. The host-import implementation was derived from the exact deployed core and verified on this Framework. NullMoth and the pinned WTL/MeowXE3 contributors supplied the Metal plugin foundation, with LLVM and Zstandard runtime components retaining their own notices.

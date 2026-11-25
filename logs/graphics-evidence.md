@@ -1,6 +1,6 @@
-# Graphics evidence through Attempt 154, November 19-22, 2026
+# Graphics evidence through Attempt 168, November 19-24, 2026
 
-I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequoia 15.8.3 24H241, Darwin 24.6.0 and OpenCore DEBUG 1.0.8. Graphics, media and display IP are 30.00. The existing display is a 2880 x 1920 firmware framebuffer with a 22118400-byte allocation. Accelerator attachment, application compute and offscreen graphics are now verified through the private Vulkan stack. Metal, presentation and an accelerated desktop remain unverified.
+I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequoia 15.8.3 24H241, Darwin 24.6.0 and OpenCore DEBUG 1.0.8. Graphics, media and display IP are 30.00. The existing display is a 2880 x 1920 firmware framebuffer with a 22118400-byte allocation. Accelerator attachment, application compute and offscreen graphics are verified through private Vulkan and Metal paths. Attempt 168 also verified bounded IOSurface host import and final mapping cleanup. Direct presentation and an accelerated desktop remain unverified.
 
 ## Captured milestones
 
@@ -50,6 +50,20 @@ I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequ
 | 152 | Vulkan buffer fill and fence completed, all 1024 words matched. | One 4 KiB transfer workload, no application shader. |
 | 153 | Application compute shader passed all 1024 index-dependent outputs. | No graphics draw or presentation in this run. |
 | 154 | Vertex/fragment draw passed all 4096 RGBA pixels and saved RGB image verification. | Offscreen rendering, no Metal, presentation or desktop acceleration. |
+| 155 | Metal runtime and Vulkan host-import capability audit passed, CLT installation confirmed. | Capability queries, no Metal plugin load. |
+| 156 | Private Metal plugin compilation stopped at omitted vulkan/vulkan.h. | Packaging failure, no binary produced. |
+| 157 | Complete headers allowed a Sequoia-targeted plugin build, local signing and verification. | Build only, not loaded. |
+| 158 | Exact private plugin loaded and registered its expected Objective-C classes. | No Metal device created yet. |
+| 159 | Private Metal device initialized with registry identity matching NMXAccel. | No workload submitted. |
+| 160 | Metal buffer fill matched all 4352 bytes including guards. | Transfer only, no application shader. |
+| 161 | Metal source compilation and translated compute matched all 1024 outputs and guards. | Private compute workload, no presentation. |
+| 162 | Metal vertex/fragment rendering matched all 4096 pixels, guards and saved RGB image. | Offscreen graphics, no presentation. |
+| 163 | IOSurface host import failed at VM-bind errno 45, later submission failed. | Pixel checks not reached, preview skipped. |
+| 164 | Disabling host import for the isolated comparison yielded matching surface/image pixels. | Diagnostic copy path, not the final fix. |
+| 165 | Exact-core tracing linked renderer HMM -45 directly to VM-bind -45. | Missing population stub confirmed. |
+| 166 | Actual four-page IOSurface range prepared, inspected and released successfully. | Temporary wiring only, original HMM error preserved. |
+| 167 | Four real pages produced four SG/DMA entries covering 16384 bytes, ordered teardown returned. | No mapping published, original HMM error preserved. |
+| 168 | Retained host import, exact texture/surface pixels and final four-page release to active=0 passed. | Bounded normal lifetime, direct presentation and broader stability unverified. |
 
 I reported everything working after Attempt 117 and everything operational after Attempt 118. Both finished with running 0 and an empty environment. These are individual captured runs, not extended stability qualification. No installed graphics driver, kernel cache or internal boot configuration was modified by these EFI experiments. The older installed WTL 0.0.48 copy was not removed. Attempts 117-118 show it refused because the selected 0.0.47 build was already loaded.
 
@@ -138,6 +152,25 @@ Raw archives, Apple kernel collections, reconstructed analysis binaries, serial 
 
 Attempts 115 and 116 retain their original as-tested packages and capture filenames. Renumbering did not rewrite source evidence. Attempts 117 and 118 each passed matching OpenCore 1.0.8 validation, all 71 staged EFI hashes, file-reference checks and ZIP integrity checks. The loaded UUID establishes the selected core variant at runtime, while it is not an independent hash verification of every mounted EFI file.
 
+### Metal and host-import capture digests
+
+| Original archive | SHA-256 |
+| --- | --- |
+| attempt-155-20261123-183929-659.tgz | 88fea788b3db90dd90e2f9a5da3fe0e3599b1900890ed9e1b0c3dff039dfa237 |
+| attempt-156-20261123-203851-673.tgz | ecee858b8e22a370325266337d0132bebe4881944d4da46819ffb0cbdede0d6e |
+| attempt-157-20261123-221759-645.tgz | febd5fed3e0718f70e2a733118cfcb64acb9d9c5c4a594c1b29b8913d9d0250e |
+| attempt-158-20261123-223725-674.tgz | 969985756d990f3710cbadff3255ac5a1a74fbc7561da38be04d28b762f10218 |
+| attempt-159-20261124-122043-682.tgz | 84cfc1155d56a382f8a297b23dd124ac1925774840ef5e1507fa6c1c1adbb51b |
+| attempt-160-20261124-123550-676.tgz | a30c83f1e24c4474fdd6cc80a2e3201980bcaf5a21723d82a07a4e0fe3f7d2a2 |
+| attempt-161-20261124-125001-688.tgz | 03121b3cca717b867f0ef5f66370c60b2ca4c6ad055746a769436b52de0072e3 |
+| attempt-162-20261124-130158-674.tgz | 5c4e103aba419151d74a2c807d4b8be457e9b9a9594bfbe6994af8e80c696982 |
+| attempt-163-20261124-131537-691.tgz | 2e2f5507ee17e9e6990f97b4ff10bee1a41354f9fbfc9b2344e5e9c6c476f682 |
+| attempt-164-20261124-132708-654.tgz | 54d5feec41984ddf89dd6a202bf820b7c0cc075b00eff492a8379434027ad3c5 |
+| attempt-165-20261124-161356-654.tgz | 0fcd3fff3affd444448c2cb1c0c5c63d409809cbaf0199e368cd74f5b8014e17 |
+| attempt-166-20261124-164145-679.tgz | f5eb8ad4200d4eb260abe5efbe55b92f33e1020d5be10cb1e2276485979c87cc |
+| attempt-167-20261124-181807-675.tgz | f23102a41397596dc453b38235ce45e9f7621b952214aa6bbfcb3e0df0f55c9f |
+| attempt-168-20261124-183738-674.tgz | 1d0999ab8ab49a64cd9f5ba45593bfcba8ed941b6aa7c035b35f359a7948c908 |
+
 ## Initialization, SRCU and userspace evidence
 
 The Attempt 119 stack was verified against all 16 XeGfx frames in the matching core. drm_dev_enter held drm_unplug_srcu while GGTT removal reached a fence wait. Its SRCU reader called ordinary RCU and pinned preemption, causing the blocking-with-preemption-disabled panic. Attempt 120 kept the core unchanged and added three exact-UUID/signature-checked Lilu routes for that DRM domain. Readers could sleep, while two reader epochs and serialized grace periods retained lifetime protection. Other domains used the original functions. This supports the diagnosis without qualifying general SRCU or hot-unplug behavior.
@@ -199,6 +232,22 @@ Explicit resource, device and instance cleanup completed in these successful run
 
 This PNG is a lossless conversion of the actual 64x64 GPU readback saved in Attempt 154. It is not a CPU-generated reference image or a desktop screenshot. The original PPM SHA-256 is fbd1c466141bce0c727bf3e515fdbc5d02291f2f1e3932ca5ea3811a3e97b5ce. The private capture includes the original PPM, verification output and independent analysis.
 
+
+## Private Metal and IOSurface host-import evidence
+
+Attempts 157-162 used a source-built private NVMTLDriver targeting Sequoia. The plugin has SHA-256 cc873490b968d2213ed36bf8916721af6767469bcb89378cbd267f1ec16439d2 and UUID 5DEB2270-A748-3E2C-8650-2AF107B95BDE. Compiler-runtime components were preserved from the same original release archive. The plugin was loaded only in the helper process, not advertised globally. Transfer, source-compiled compute and offscreen graphics each passed their independent output/guard checks.
+
+The IOSurface import failure was traced to the exact core's unsupported HMM population stub. Temporary wiring and SG/DMA probes qualified the real memory and helper ABI before the final implementation. The successful mapping plugin in Attempt 168 is XeGfxUserptrTrace 0.4.0, UUID 18B1BD0A-D6E7-3CC0-95F9-FBF84DC48A32. It retains page/SG/DMA ownership and writes only the binary-verified SG pointer and notifier sequence, with separate unmap and final-free paths.
+
+The renderer imported 16384 bytes across four pages with host import enabled. HMM and all 20 logged binds returned zero. All 4096 texture pixels, 512 guard bytes and CPU-visible surface bytes matched. The saved BGRA surface and PPM were independently verified as exactly 2048 red and 2048 cyan pixels. The helper and separate CPU preview exited zero. DMA unmap and SG free returned, and USERPTR_FREED reported released=4 active=0 within the five-second cleanup snapshot. The collector's manual-results field was blank, but I confirmed alongside the archive that it worked and everything remained working.
+
+The implementation is limited to 64 pages per mapping and 16 simultaneous mappings on the exact tested core. The runtime's private render image is copied into imported surface memory. This is not native cross-process image sharing or direct presentation. General invalidation semantics, larger buffers, broader concurrency and long-term stability are unqualified. Installed collection hashes remained unchanged.
+
+### Host-import rendering artifact
+
+![Attempt 168 verified IOSurface output](graphics-artifacts/attempt-168-render.png)
+
+Actual RGB readback from the successful host-import run, enlarged with nearest-neighbor scaling. This image and the separate AppKit CPU preview are evidence of checked output, not accelerated WindowServer.
 
 ## Credits
 
