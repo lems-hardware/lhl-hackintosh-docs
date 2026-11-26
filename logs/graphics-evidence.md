@@ -1,6 +1,6 @@
-# Graphics evidence through Attempt 168, November 19-24, 2026
+# Graphics evidence through Attempt 181, November 19-25, 2026
 
-I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequoia 15.8.3 24H241, Darwin 24.6.0 and OpenCore DEBUG 1.0.8. Graphics, media and display IP are 30.00. The existing display is a 2880 x 1920 firmware framebuffer with a 22118400-byte allocation. Accelerator attachment, application compute and offscreen graphics are verified through private Vulkan and Metal paths. Attempt 168 also verified bounded IOSurface host import and final mapping cleanup. Direct presentation and an accelerated desktop remain unverified.
+I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequoia 15.8.3 24H241, Darwin 24.6.0 and OpenCore DEBUG 1.0.8. Graphics, media and display IP are 30.00. The existing display is a 2880 x 1920 firmware framebuffer with a 22118400-byte allocation. Accelerator attachment, application compute and offscreen graphics are verified through private Vulkan and Metal paths. Later tests verified bounded imported-memory cleanup, a short 2 GiB cumulative randomized asynchronous workload and twelve visible CAMetalLayer frames through the explicitly loaded private Metal device. Ordinary Metal discovery still returns no devices, and accelerated WindowServer remains unverified.
 
 ## Captured milestones
 
@@ -64,6 +64,19 @@ I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequ
 | 166 | Actual four-page IOSurface range prepared, inspected and released successfully. | Temporary wiring only, original HMM error preserved. |
 | 167 | Four real pages produced four SG/DMA entries covering 16384 bytes, ordered teardown returned. | No mapping published, original HMM error preserved. |
 | 168 | Retained host import, exact texture/surface pixels and final four-page release to active=0 passed. | Bounded normal lifetime, direct presentation and broader stability unverified. |
+| 169 | Four imported commits returned before gate release, then no callbacks within ten seconds. Cleanup released all sixteen pages. | No data verification reached. Timeout cause remains unresolved. |
+| 170 | All eight ordinary/imported, one/two-queue and gated/ungated retained-reference controls passed, 32 commands total. | Small workloads with application references retained. |
+| 171 | All eight retained/early-release controls passed, 32 commands with independent readback and imported-surface checks. | Extra GPU readback copy differs from Attempt 169. Original timeout not explained. |
+| 172 | Ordinary retained fill-only case exited 142 before commit/gate checkpoints. | Alarm included initialization. No HMM calls, no useful worker sample. |
+| 173 | Instrumented ordinary fill-only replay passed. Samples caught logger I/O during slow initialization. | Logging latency contribution, not proof of the earlier timeout causes. |
+| 174 | All four log-destination controls passed. Local logging was faster in both comparisons. | Earlier timeouts remain causally unresolved. |
+| 175 | Dynamic import storage passed sixteen early-release fill jobs, checked bytes/guards and all sixty-four page releases. | Storage device also changed. Bounds remain 64 pages/import and sixteen active mappings. |
+| 176 | Sixteen asynchronous imported compute jobs passed, with all 63488 transformed words independently verified. | Default sizing, two queues, no general invalidation qualification. |
+| 177 | Stage 5 returned EBUSY before rendering. Exact binary exposed a watchdog ownership retirement race. | Ownership flag not sampled at rejection. No after-collection hashes in this early-stop capture. |
+| 178 | Scoped watchdog retirement handshake passed all stages. Sixteen queued frames passed pixel, guard and cleanup checks. | Original request called once, no watchdog bypass. Offscreen rendering only. |
+| 179 | Initial eight ungated jobs made out-of-order callback progress, but verifier lifetime check stopped after one verified job. | Compiled verifier established autorelease-owner retention. Not a 2 GiB pass. |
+| 180 | All 802 randomized ungated jobs passed exactly 2 GiB cumulative payload checks, with all 360 mappings freed. | 4.253-second scope, not 2 GiB simultaneous residency or extended stability. Independent reference hashes, successful raw outputs not archived. |
+| 181 | Twelve CAMetalLayer frames rendered visibly through the explicit private device, with all callbacks and cleanup passing. | Native Metal discovery returned zero devices. Presented timestamps were zero. No accelerated WindowServer claim. |
 
 I reported everything working after Attempt 117 and everything operational after Attempt 118. Both finished with running 0 and an empty environment. These are individual captured runs, not extended stability qualification. No installed graphics driver, kernel cache or internal boot configuration was modified by these EFI experiments. The older installed WTL 0.0.48 copy was not removed. Attempts 117-118 show it refused because the selected 0.0.47 build was already loaded.
 
@@ -249,6 +262,43 @@ The implementation is limited to 64 pages per mapping and 16 simultaneous mappin
 
 Actual RGB readback from the successful host-import run, enlarged with nearest-neighbor scaling. This image and the separate AppKit CPU preview are evidence of checked output, not accelerated WindowServer.
 
+## Asynchronous execution, stress and presentation evidence
+
+The [technical findings](../TECHNICAL-FINDINGS.md#attempts-169-174---asynchronous-lifetime-controls-and-logging-latency) explain the control experiments, exact-core handoff race and verifier-lifetime correction. The [journal](fw13p-attempts-sequoia.md) preserves the original first-person entries through Attempt 181. These are confirmed captures, including failed diagnostics, rather than a claim that every workload or application is supported.
+
+### Later build identities and bounds
+
+| Component | Version | Loaded UUID | Executable SHA-256 |
+| --- | --- | --- | --- |
+| XeGfx core | 0.0.47 | 711C3CE5-C9AE-5311-AFFC-4E6AE247F529 | 281e42700bf1321793856798d243f101c43daf95ade762255e025ffd8ede4f79 |
+| XeGfxAccel | 0.9 | D63BCE8E-236F-3178-BB25-D30D3502B8A1 | 5a2c2711ceb77a5fb5dcadfe3d09cb0e19e8ae5971478ce65d77a19725af0056 |
+| XeGfxUserptrTrace, from Attempt 175 | 0.5.0 | CD4C9B4D-8121-3DEF-8741-607790E0F39B | 6eeba835e7bbef27938917ff36806ba335d5c42e95e66ad884b800e85f35d48d |
+| XeGfxStageHandoffFix, from Attempt 178 | 0.1.0 | A73E31C0-C94F-3FF7-A298-D70C0CE4FC36 | 0efad57a2ac5a12b744469d48b95e64b3ae393c99a188ee50a8428154678b9a5 |
+
+The private Metal driver used for the later tests has UUID 5DEB2270-A748-3E2C-8650-2AF107B95BDE and executable SHA-256 cc873490b968d2213ed36bf8916721af6767469bcb89378cbd267f1ec16439d2. Dynamic import storage remains limited to 64 pages per mapping and sixteen active mappings. The ordinary runtime render wait was retained, including during the ungated stress test. Removing artificial event gates did not disable its safeguards.
+
+Attempt 180 checked all 802 job outputs and guards, then retired every resource. A separate reference reproduced all saved job hashes. Successful raw outputs were not archived. The exact 2 GiB total was cumulative over about 4.253 seconds, with peak useful payload 80756736 bytes. Kernel import accounting ended at zero after 360 mapping frees and 9884 page releases. The configured successful-bind trace logged only its 256-call prefix.
+
+Attempt 181 separately confirmed that ordinary Metal discovery returned nil/zero devices. Explicit private-device loading nevertheless produced a visible twelve-frame CAMetalLayer window without a CPU preview fallback. All GPU completions, presented callbacks and worker returns passed. Both imported drawable mappings were freed with thirty-two page holds released. All presented timestamps were zero. Visibility was manually observed, without automated drawable pixel readback, and system-wide graphics acceleration remains unverified.
+
+### Original asynchronous and presentation capture digests
+
+| Original archive | SHA-256 |
+| --- | --- |
+| attempt-169-20261124-194650-662.tgz | 5d0083fec70bda8d0791d4b1e9195806fb8969ba2c029fda1727e24d1edc85fa |
+| attempt-170-20261124-200353-685.tgz | ae1c245cc4369d463f4cf83d5e4e617ffbaef90f4950ed9aed3d85fed229492f |
+| attempt-171-20261124-202533-677.tgz | e2a3449430495ec454722d688dd2555fd7b5c08ff05d8a157b97e95632356e11 |
+| attempt-172-20261124-210413-659.tgz | 72b065b0f903fad43ab6b509228a8a92c079b72ffa3f7093a0edcbe046196e55 |
+| attempt-173-20261124-214026-720.tgz | 2e2ca739a7cd4a92be64829378fdf47bb7ab128e976914f360f2039906fd43e7 |
+| attempt-174-20261125-104619-678.tgz | d2c82e37917f05a17dcb4ccf093f2d648ce5a39ecd0315cbf5c81942fd24461c |
+| attempt-175-20261125-115943-752.tgz | c0acf24a2ec8b4a96000fce50741b0d69bc278344ee4fe63e3d10bd094faa948 |
+| attempt-176-20261125-122518-671.tgz | cd053da4c96a57e25435212b4a532d8429d91ad11edd6c3ceade1d58518c474f |
+| attempt-177-20261125-132434-682.tgz | b754836a8cbebeddb82d1dad866efddee4dfa3d8c6e7212cc7a7f60514a8f078 |
+| attempt-178-20261125-134151-641.tgz | 4325450777e7acf48309e83f43befc50979baa7b2e232e1b40e941ed3819c49a |
+| attempt-179-20261125-223413-766.tgz | ab5640008b7afb4388367482825784cc24757704a4943b29a80ef665e1088fcb |
+| attempt-180-20261125-224442-655.tgz | 0329f6fd9ac95c55ca5724e1ab459e322cc0da524fb354d2c51db1eda77c5318 |
+| attempt-181-20261125-230943-673.tgz | ba03fc417f92b97657257f58356198f63084dbcac610a4e06115857548dd7499 |
+
 ## Credits
 
-The local sleepable SRCU compatibility route uses Lilu and DebugEnhancer. The core and diagnostic groundwork belongs to watchthelight, InSnh-Gd, Mubai and upstream contributors. NullMoth provides the shared accelerator foundation, and NVIDIA open-gpu-kernel-modules supplies build headers. [MeowXE3](https://github.com/cuadra8998/MeowXE3) supplied the original 1.0.12 packaged Intel Vulkan ICD and libdrm used unchanged here, with credit to Mesa/ANV, Intel, libdrm and the NullMoth port contributors. Khronos supplies the Vulkan headers, glslang and SPIR-V validation tools used in my helpers. [ericek111's virtualized Xe3 work](https://github.com/ericek111/vibe-nullmoth-xe3-qemu) informed comparison research. Their different hardware and deployment results are not transferred to this Framework. See the [full credits](../TECHNICAL-FINDINGS.md#credits-and-references). Third-party licenses remain with their respective projects.
+The local sleepable SRCU compatibility route uses Lilu and DebugEnhancer. The core and diagnostic groundwork belongs to watchthelight, InSnh-Gd, Mubai and upstream contributors. NullMoth provides the shared accelerator foundation, and NVIDIA open-gpu-kernel-modules supplies build headers. [MeowXE3](https://github.com/cuadra8998/MeowXE3) supplied the original 1.0.12 packaged Intel Vulkan ICD and libdrm used unchanged here, with credit to Mesa/ANV, Intel, libdrm and the NullMoth port contributors. Khronos supplies the Vulkan headers, glslang and SPIR-V validation tools used in my helpers. [ericek111's virtualized Xe3 work](https://github.com/ericek111/vibe-nullmoth-xe3-qemu) informed comparison research. [Mubai's pinned userptr work](https://github.com/yangyishuo1124/Mubai-s-Hackintosh-Logs/tree/f7164ac366a74dfcc641c2098c9908affd26a462) informed the later dynamic ownership comparison. Apple documents [CAMetalLayer](https://developer.apple.com/documentation/QuartzCore/CAMetalLayer), used for the presentation helper. Their different hardware and deployment results are not transferred to this Framework. See the [full credits](../TECHNICAL-FINDINGS.md#credits-and-references). Third-party licenses remain with their respective projects.

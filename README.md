@@ -19,7 +19,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-Research status: Private Metal compute, offscreen rendering and IOSurface host-memory import now pass checked workloads on the B390. Direct presentation, accelerated WindowServer and broader graphics stability remain unverified.
+Research status: Private Metal now renders visibly through CAMetalLayer, and a randomized asynchronous workload passed 2 GiB of cumulative data checks. Ordinary Metal device discovery still returns no devices. Accelerated WindowServer and broader graphics stability remain unverified.
 
 | Component                       | Status                  | Notes                                                                                                                                                                                                                   |
 | ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ Research status: Private Metal compute, offscreen rendering and IOSurface host-m
 | macOS installation              | Working                 | Sequoia 15.8.3 installed offline to a dedicated internal APFS partition                                                                                                                                                 |
 | Installed desktop               | Working                 | Setup completed, desktop and System Settings reached                                                                                                                                                                    |
 | CPU compatibility               | Partial                 | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU                                                                                                                                                 |
-| Integrated graphics/display | Partial | Basic display output remains in use. Accelerator startup and stage-7 attachment work in captured runs. Private Vulkan and Metal compute/rendering pass. IOSurface host import and final cleanup are verified for a bounded workload. Native display takeover remains untested. |
+| Integrated graphics/display | Partial | The firmware desktop remains in use. Stage-7 attachment, private Vulkan/Metal workloads and visible CAMetalLayer rendering pass. Imported mapping cleanup and a bounded 2 GiB cumulative async stress run pass. Ordinary Metal discovery and native display takeover remain unresolved. |
 | Internal keyboard               | Working                 | VoodooPS2                                                                                                                                                                                                               |
 | Touchpad                        | Working                 | Gestures, scrolling, and Trackpad settings work                                                                                                                                                                         |
 | USB controllers | Working in tested configuration | USBToolBox and an explicit map create all 12 XHCI and five TXHC ports. Connector types remain provisional, with other ports and Type-C orientation unverified. |
@@ -36,7 +36,7 @@ Research status: Private Metal compute, offscreen rendering and IOSurface host-m
 | External USB mouse | Working on tested port | Logitech M330 receiver buttons, scrolling and reconnect work on top-right XHCI HS02. Six latest reconnects reached HID startup in 0.52-0.54 s with a scoped 350 ms reset window. |
 | Native I²C touchpad             | Working                 | VoodooI2CHID and VoodooInput attach in polling mode for touch reports, appears to be reliable throughout experiments                                                                                                    |
 | Wi-Fi                           | Partial                 | The experimental BE211 driver loaded a public HTTPS page in Safari on an open 2.4 GHz network. A follow-up ran for 3–4 hours without unexpected disconnects and reconnected automatically after an overnight lid close. |
-| GPU acceleration | Experimental, private Vulkan and Metal verified | Checked transfer, compute and offscreen graphics output through both private APIs. IOSurface host import works in the tested path. No direct presentation or accelerated desktop demonstrated. |
+| GPU acceleration | Experimental, private Vulkan and Metal verified | Checked transfer, compute and offscreen output through private APIs. Twelve CAMetalLayer frames rendered visibly through an explicitly loaded private Metal device. System-wide Metal discovery and accelerated WindowServer remain unverified. |
 | Onboard audio | Working in tested functions | ALC285 microphone, speakers, wired headphones, volume/mute and automatic jack switching work, including across restarts. Extended stability and sleep/wake remain unverified. |
 | Webcam | Enumerated | The internal webcam appears in USB and Camera inventories. Video capture has not been tested. |
 | Bluetooth | Not yet verified | Installed-system functional testing pending. |
@@ -95,6 +95,13 @@ These statuses may be hardware specific to this configuration or potentially eve
 - **Attempt 168:** Implemented retained user-pointer mappings. Host import and rendering succeeded with exact texture and IOSurface pixels, followed by release of all four pages and an active mapping count of zero. Direct presentation and broader stability remain unverified.
 
 
+- **Attempts 169-174:** Compared ordinary and imported buffers, retained and early-release ownership, fill-only workloads and log destinations. Later controls passed, while the original timeouts remain unexplained. Stack samples and controlled comparisons identified diagnostic file I/O as a latency contributor.
+- **Attempts 175-176:** Switched import records and page vectors to dynamic allocation, then verified repeated asynchronous imported-buffer fills and compute with early application-reference release and complete page cleanup. The 64-page/import and 16-active-mapping limits remain.
+- **Attempts 177-178:** Identified a watchdog stage-handoff race and added a scoped retirement handshake. All stages and sixteen queued offscreen frames then passed exact pixel, guard and cleanup checks.
+- **Attempts 179-180:** Corrected a verifier autorelease-pool lifetime bug, then completed 802 randomized ungated jobs across four queues. Exactly 2 GiB of cumulative payload passed checks, with all 360 imported mappings freed. This was a short finite run, not 2 GiB simultaneous allocation or long-term stability qualification.
+- **Attempt 181:** Presented twelve changing checkerboard frames in a real CAMetalLayer window without a CPU preview fallback. Ordinary Metal discovery still returned no devices. Display timestamps were zero, and accelerated WindowServer remains unverified.
+
+
 ### Offline installation milestone
 
 The successful installation used:
@@ -115,7 +122,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-168, including BE211 Wi-Fi, audio, USB, battery/lid reporting, accelerator attachment, verified Vulkan and Metal workloads, and the IOSurface host-import fix. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-181, including BE211 Wi-Fi, audio, USB, battery/lid reporting, accelerator attachment, verified Vulkan and Metal workloads, imported-memory lifetime checks, randomized async stress and private-device window presentation. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
 
 ### Visual archive
 
@@ -128,7 +135,7 @@ Photographs documenting kernel output, driver initialization, Recovery milestone
 1. **(Paused) Wireless networking:** Extend BE211 support to secured networks and additional bands, and test more reconnect scenarios. WPA2/WPA3 and 5 GHz support remain open work.
 2. **System stability and power:** Qualify battery reporting across restarts and investigate the boot framebuffer sleep preventer and CPU power efficiency. Lid notifications already work.
 3. **USB compatibility:** Qualify additional physical ports, Type-C orientation and sleep/wake. Correct provisional connector metadata and monitor the remaining occasional reconnect retry.
-4. **GPU acceleration (current focus):** Qualify mapping lifetime, larger surfaces and presentation while preserving the verified private Vulkan and Metal paths. Native display takeover, accelerated WindowServer and broader stability remain open.
+4. **GPU acceleration (current focus):** Resolve ordinary Metal device discovery and application integration while preserving the verified private-device presentation path. Larger mappings, general invalidation, native display takeover, accelerated WindowServer and broader stability remain open.
 5. **(Complete) Input devices:** Improve PS/2 initialization reliability and test native I²C touchpad stability.
 
 ## Project Scope
