@@ -1,4 +1,4 @@
-# Graphics evidence through Attempt 181, November 19-25, 2026
+# Graphics evidence through Attempt 185, November 19-26, 2026
 
 I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequoia 15.8.3 24H241, Darwin 24.6.0 and OpenCore DEBUG 1.0.8. Graphics, media and display IP are 30.00. The existing display is a 2880 x 1920 firmware framebuffer with a 22118400-byte allocation. Accelerator attachment, application compute and offscreen graphics are verified through private Vulkan and Metal paths. Later tests verified bounded imported-memory cleanup, a short 2 GiB cumulative randomized asynchronous workload and twelve visible CAMetalLayer frames through the explicitly loaded private Metal device. Ordinary Metal discovery still returns no devices, and accelerated WindowServer remains unverified.
 
@@ -77,6 +77,10 @@ I tested the Framework Laptop 13 Pro with Arc B390 8086:b082 revision 04 on Sequ
 | 179 | Initial eight ungated jobs made out-of-order callback progress, but verifier lifetime check stopped after one verified job. | Compiled verifier established autorelease-owner retention. Not a 2 GiB pass. |
 | 180 | All 802 randomized ungated jobs passed exactly 2 GiB cumulative payload checks, with all 360 mappings freed. | 4.253-second scope, not 2 GiB simultaneous residency or extended stability. Independent reference hashes, successful raw outputs not archived. |
 | 181 | Twelve CAMetalLayer frames rendered visibly through the explicit private device, with all callbacks and cleanup passing. | Native Metal discovery returned zero devices. Presented timestamps were zero. No accelerated WindowServer claim. |
+| 182 | Signed FILES bundle seal passed, but a collector variable collision supplied the wrong path. | Helper exited before driver loading. |
+| 183 | Correct FILES path, NSBundle load, exact NVMTLDevice class/selector and image checks passed. | No device initialization or native discovery fix. |
+| 184 | Desktop-sized imported buffer and 32 active mappings passed data, guard and retirement checks. | Largest import was 22126592 bytes. Separate 32-buffer group used small allocations. |
+| 185 | Two independent clients, completed-work abrupt exit and recovery passed. | Independent allocations, no shared-surface IPC or pending-GPU termination. |
 
 I reported everything working after Attempt 117 and everything operational after Attempt 118. Both finished with running 0 and an empty environment. These are individual captured runs, not extended stability qualification. No installed graphics driver, kernel cache or internal boot configuration was modified by these EFI experiments. The older installed WTL 0.0.48 copy was not removed. Attempts 117-118 show it refused because the selected 0.0.47 build was already loaded.
 
@@ -264,7 +268,7 @@ Actual RGB readback from the successful host-import run, enlarged with nearest-n
 
 ## Asynchronous execution, stress and presentation evidence
 
-The [technical findings](../TECHNICAL-FINDINGS.md#attempts-169-174---asynchronous-lifetime-controls-and-logging-latency) explain the control experiments, exact-core handoff race and verifier-lifetime correction. The [journal](fw13p-attempts-sequoia.md) preserves the original first-person entries through Attempt 181. These are confirmed captures, including failed diagnostics, rather than a claim that every workload or application is supported.
+The [technical findings](../TECHNICAL-FINDINGS.md#attempts-169-174---asynchronous-lifetime-controls-and-logging-latency) explain the control experiments, exact-core handoff race and verifier-lifetime correction. The [journal](fw13p-attempts-sequoia.md) preserves the original first-person entries through Attempt 185. These are confirmed captures, including failed diagnostics, rather than a claim that every workload or application is supported.
 
 ### Later build identities and bounds
 
@@ -298,6 +302,25 @@ Attempt 181 separately confirmed that ordinary Metal discovery returned nil/zero
 | attempt-179-20261125-223413-766.tgz | ab5640008b7afb4388367482825784cc24757704a4943b29a80ef665e1088fcb |
 | attempt-180-20261125-224442-655.tgz | 0329f6fd9ac95c55ca5724e1ab459e322cc0da524fb354d2c51db1eda77c5318 |
 | attempt-181-20261125-230943-673.tgz | ba03fc417f92b97657257f58356198f63084dbcac610a4e06115857548dd7499 |
+
+## Bundle loading and expanded userptr evidence through Attempt 185
+
+Attempt 182 signed the FILES bundle, but its inventory loop overwrote the prepared-path variable. The helper exited before attempting driver loading. Attempt 183 corrected the path and passed NSBundle load, exact class, initializer-selector and implementation-image checks with exit zero. Normal Objective-C class-load routines ran, but the helper did not initialize a device. Ordinary Metal discovery still returned nil and zero devices. Neither attempt installed or advertised a bundle.
+
+Attempt 184 loaded XeGfxUserptrTrace 0.6.0, UUID FBC73E09-EF26-32D2-A22E-0EE089A4D277, with executable SHA-256 e01c7753ec52e65eed7a5faca3cf5e646d95e02a314f4abde24c645c8970a9e0. Its plugin-owned flat SG tables and admission budgets exceeded the old import and record limits. All 39 imports passed, including 5402 pages with 22118400 useful bytes plus 8192 guard bytes. A separate small-buffer group reached 32 kernel mappings. Every mapping was freed and all 6928 page holds released. The helper checked 28057600 useful bytes per direction and 319488 guard bytes.
+
+Attempt 185 retained that exact EFI. Two processes each held sixteen mappings, with 32 active in total. A third process exited with sixteen live imports after its GPU commands completed. Kernel accounting returned to zero before a recovery client published four imports. All 52 mappings freed 208 page holds, with zero-active boundaries after phases of 32, 16 and 4 frees. All data/guards and 138 logged binds passed. The helper checked 425984 useful bytes per direction and 425984 guards.
+
+Both memory captures ended with the core idle, NMXAccel active, matching before/after collection hashes and the manual note all working. Successful raw GPU buffers were not archived, so independent analysis checks saved reports and kernel accounting rather than rereading all outputs.
+
+The [standalone userptr repository](https://github.com/lems-hardware/lhl-userptr-patch) preserves the tested Trace artifact and publishes the renamed XeGfxUserptrFix preview, UUID E8A629A6-2786-3E53-8792-9FDAE1810596. Its own hardware capture is pending. Shared-surface IPC, budget exhaustion, allocation-failure recovery, pending-GPU process termination, HMM invalidation and sustained contention remain open.
+
+| Original archive | SHA-256 |
+| --- | --- |
+| attempt-182-20261126-205800-692.tgz | c5fe91e361b874d950c9938c766b70760fd36918c92c69338db2c375ca8daea4 |
+| attempt-183-20261126-215138-649.tgz | 7fc365bbcf9df001031ed95e6f4de4bd3fa794cbc055b2c2bacf67564d620b7d |
+| attempt-184-20261126-221343-672.tgz | 37ee0a85f4c724b688c6667386fc62028e06c740abe84b8dec956f9d00688242 |
+| attempt-185-20261126-222949-659.tgz | ce2c26bdc16b77626775f95e96e25a796c0cdbd47677ef5dafddd7a8159bea49 |
 
 ## Credits
 

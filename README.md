@@ -19,7 +19,7 @@ This hardware is not officially supported by macOS. Significant compatibility wo
 
 ## Current Progress
 
-Research status: Private Metal now renders visibly through CAMetalLayer, and a randomized asynchronous workload passed 2 GiB of cumulative data checks. Ordinary Metal device discovery still returns no devices. Accelerated WindowServer and broader graphics stability remain unverified.
+Research status: Private Metal renders visibly through CAMetalLayer. Userptr tests now pass a desktop-sized imported buffer, 32 active mappings across independent clients and process-exit cleanup after completed GPU work. Ordinary Metal discovery remains empty. Accelerated WindowServer and broader graphics stability remain unverified.
 
 | Component                       | Status                  | Notes                                                                                                                                                                                                                   |
 | ------------------------------- | ----------------------- | ----------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------------- |
@@ -28,7 +28,7 @@ Research status: Private Metal now renders visibly through CAMetalLayer, and a r
 | macOS installation              | Working                 | Sequoia 15.8.3 installed offline to a dedicated internal APFS partition                                                                                                                                                 |
 | Installed desktop               | Working                 | Setup completed, desktop and System Settings reached                                                                                                                                                                    |
 | CPU compatibility               | Partial                 | Boots with CPUID spoofing and custom ACPI, macOS reports an unknown CPU                                                                                                                                                 |
-| Integrated graphics/display | Partial | The firmware desktop remains in use. Stage-7 attachment, private Vulkan/Metal workloads and visible CAMetalLayer rendering pass. Imported mapping cleanup and a bounded 2 GiB cumulative async stress run pass. Ordinary Metal discovery and native display takeover remain unresolved. |
+| Integrated graphics/display | Partial | The firmware desktop remains in use. Stage-7 attachment, private Vulkan/Metal workloads and visible CAMetalLayer rendering pass. Imported mapping cleanup, a bounded 2 GiB cumulative async stress run, desktop-sized imports and independent-client cleanup pass. Ordinary Metal discovery and native display takeover remain unresolved. |
 | Internal keyboard               | Working                 | VoodooPS2                                                                                                                                                                                                               |
 | Touchpad                        | Working                 | Gestures, scrolling, and Trackpad settings work                                                                                                                                                                         |
 | USB controllers | Working in tested configuration | USBToolBox and an explicit map create all 12 XHCI and five TXHC ports. Connector types remain provisional, with other ports and Type-C orientation unverified. |
@@ -96,11 +96,17 @@ These statuses may be hardware specific to this configuration or potentially eve
 
 
 - **Attempts 169-174:** Compared ordinary and imported buffers, retained and early-release ownership, fill-only workloads and log destinations. Later controls passed, while the original timeouts remain unexplained. Stack samples and controlled comparisons identified diagnostic file I/O as a latency contributor.
-- **Attempts 175-176:** Switched import records and page vectors to dynamic allocation, then verified repeated asynchronous imported-buffer fills and compute with early application-reference release and complete page cleanup. The 64-page/import and 16-active-mapping limits remain.
+- **Attempts 175-176:** Switched import records and page vectors to dynamic allocation, then verified repeated asynchronous imported-buffer fills and compute with early application-reference release and complete page cleanup. Those tests retained 64-page/import and 16-active-mapping limits, later exceeded in Attempts 184-185.
 - **Attempts 177-178:** Identified a watchdog stage-handoff race and added a scoped retirement handshake. All stages and sixteen queued offscreen frames then passed exact pixel, guard and cleanup checks.
 - **Attempts 179-180:** Corrected a verifier autorelease-pool lifetime bug, then completed 802 randomized ungated jobs across four queues. Exactly 2 GiB of cumulative payload passed checks, with all 360 imported mappings freed. This was a short finite run, not 2 GiB simultaneous allocation or long-term stability qualification.
 - **Attempt 181:** Presented twelve changing checkerboard frames in a real CAMetalLayer window without a CPU preview fallback. Ordinary Metal discovery still returned no devices. Display timestamps were zero, and accelerated WindowServer remains unverified.
 
+
+- **Attempts 182-183:** Corrected a collector path collision, then loaded the signed FILES bundle with exact class, initializer selector and executable-image checks. Ordinary discovery remained empty and nothing was installed or advertised.
+- **Attempt 184:** Verified a 22126592-byte import containing 22118400 useful bytes and page guards, then 32 active small mappings. All 39 mappings released 6928 page holds.
+- **Attempt 185:** Verified two independent clients with 32 active mappings, process exit with sixteen live imports after GPU completion, and subsequent recovery. All 52 mappings released 208 page holds.
+
+The standalone [XeGfxUserptrFix developer preview](https://github.com/lems-hardware/lhl-userptr-patch) includes source, packages, checksums and provenance. Attempts 184-185 tested the original XeGfxUserptrTrace 0.6.0 artifact. The renamed Fix build awaits its own hardware capture.
 
 ### Offline installation milestone
 
@@ -122,7 +128,7 @@ For exact configuration changes, observations, and unresolved questions from the
 
 [Framework Panther Lake: macOS Sequoia boot attempts](logs/fw13p-attempts-sequoia.md)
 
-A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-181, including BE211 Wi-Fi, audio, USB, battery/lid reporting, accelerator attachment, verified Vulkan and Metal workloads, imported-memory lifetime checks, randomized async stress and private-device window presentation. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
+A chronological record of configuration changes, experimental boot results, debugging observations, and technical findings. The journal covers attempts 1-185, including BE211 Wi-Fi, audio, USB, battery/lid reporting, accelerator attachment, verified Vulkan and Metal workloads, imported-memory lifetime checks, randomized async stress, private-device window presentation, bundle class loading and independent-client memory cleanup. The [graphics evidence summary](logs/graphics-evidence.md) records exact builds, results and limitations.
 
 ### Visual archive
 
